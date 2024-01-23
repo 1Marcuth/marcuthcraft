@@ -1,76 +1,94 @@
 import { FC, useEffect, useState } from "react"
 
+import ResourceLoader, { Resource } from "../../game/resource-loader"
+import { wait } from "@testing-library/user-event/dist/utils"
+import Player, { getPlayerAction } from "../../game/player"
 import KeyboardListener from "../../keyboard-listener"
 import GameScreen from "../../components/game-screen"
-import Player, { getPlayerAction } from "../../game/player"
 import { screenSize } from "../../game-config"
 import renderGame from "../../game/render"
 import Game from "../../game"
 
 import spritesSource from "../../assets/img/sprites.png"
+
 const soundtrackSource = require("../../assets/aud/soundtrack.mp3") as string
 
 ///import styles from "./style.module.scss"
 
 const HomePage: FC = () => {
+    const [ currentSoundtrack, setCurrentSoundtrack ] = useState<HTMLAudioElement | null>(null)
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
- 
+
     function handleGameScreenReady(canvas: HTMLCanvasElement) {
         setCanvas(canvas)
     }
 
+    function handleKeyPressed(keyPressed: string, player: Player) {
+        const playerAction = getPlayerAction(keyPressed, player)
+
+        if (playerAction) {
+            playerAction()
+        }
+    }
+
     useEffect(() => {
+        async function playSoundtrack(soundtrack: HTMLAudioElement): Promise<any> {
+            try {
+                soundtrack.loop = true
+                soundtrack.volume = .3
+                await soundtrack.play()
+            } catch(error) {
+                await wait(1000)
+                return await playSoundtrack(soundtrack)
+            }
+        }
+
         const player = new Player({ skin: new Image() })
         const game = new Game({ player: player })
 
         const keyboardListener = new KeyboardListener(document)
-        const sourceImage = new Image()
-        const soundtrack = new Audio()
-
-        sourceImage.src = spritesSource
-        soundtrack.src = soundtrackSource
-
-        async function handleSoundtrackLoad() {
-            try {
-                soundtrack.loop = true
-                soundtrack.volume = .3
-                //await soundtrack.play()
-            } catch(error) {
-                setTimeout(() => {
-                    console.log("tentando de novo")
-                    handleSoundtrackLoad()
-                }, 1000)
+        const resourceLoader = new ResourceLoader({ resources: [
+            {
+                name: spritesSource,
+                loadEventName: "load",
+                resourceObject: new Image(),
+                source: spritesSource
+            },
+            {
+                name: soundtrackSource,
+                loadEventName: "loadeddata",
+                resourceObject: new Audio(),
+                source: soundtrackSource
             }
-        }
+        ] })
 
-        function handleImagesLoad() {
-            if (!canvas) return
+        resourceLoader.subscribe(async (event, ...args) => {
+            if (event === "loadedResource") {
+                const resource: Resource = args[0]
 
-            player.subscribe((eventType) => {
-                console.log(eventType)
-            })
-    
-            function handleKeyPressed(keyPressed: string) {
-                const playerAction = getPlayerAction(keyPressed, player)
-    
-                if (playerAction) {
-                    playerAction()
+                if (resource.name === soundtrackSource) {
+                    const soundtrack = resource.resourceObject
+                    setCurrentSoundtrack(soundtrack)
+                    await playSoundtrack(soundtrack)
+
+                } else if (resource.name === spritesSource) {
+                    if (!canvas) return
+
+                    const sourceImage = resource.resourceObject
+
+                    player.subscribe((eventType) => console.log(eventType))
+                    keyboardListener.subscribe((keyPressed) => handleKeyPressed(keyPressed, player))
+
+                    renderGame(game, canvas, sourceImage, requestAnimationFrame)
                 }
             }
-    
-            keyboardListener.subscribe(handleKeyPressed)
+        })
 
-            renderGame(game, canvas, sourceImage, requestAnimationFrame)
-        }
-
-        sourceImage.addEventListener("load", handleImagesLoad) 
-        soundtrack.addEventListener("loadeddata", handleSoundtrackLoad)
+        resourceLoader.load()
 
         return () => {
             keyboardListener.destroy()
-            sourceImage.removeEventListener("load", handleImagesLoad)
-            soundtrack.removeEventListener("loadeddata", handleSoundtrackLoad)
-            soundtrack.pause()
+            resourceLoader.destroy();
         }
     }, [canvas])
 

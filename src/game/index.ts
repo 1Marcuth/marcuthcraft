@@ -24,7 +24,7 @@ class Game {
     }
 
     private createWorld(player: Player): World {
-        const world = new World({ seed: "0" })
+        const world = new World({ seed: 1 })
         world.addPlayer(player, { x: 0, y: 0 })
         return world
     }

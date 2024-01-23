@@ -1,5 +1,6 @@
 import { chunkWidth, startChunkIndex, maxChunksToLeft, maxChunksToRight } from "./../game-config"
 import randomUUID from "../utils/id-generator"
+import PRNG from "../utils/prng"
 import Entity from "./entity"
 import Player from "./player"
 import Chunk from "./chunk"
@@ -9,9 +10,10 @@ type Chunks = {
 }
 
 export type WorldProps = {
-    seed?: string
+    seed?: string | number
     chunks: Chunks
     entities: Entity[]
+    prng: PRNG
 }
 
 export type Coordinates = {
@@ -19,19 +21,21 @@ export type Coordinates = {
     y: number
 }
 
-type WorldPartialProps = Omit<WorldProps, "chunks" | "entities">
-
+type WorldPartialProps = Omit<WorldProps, "chunks" | "entities" | "prng">
 
 class World {
     public id: string
     public props: WorldProps
 
     public constructor(props: WorldPartialProps) {
+        if (!props.seed) props.seed = randomUUID()
+
         this.id = randomUUID()
         this.props = {
             ...props,
             chunks: {},
-            entities: []
+            entities: [],
+            prng: new PRNG(props.seed)
         }
 
         this.generateChunks()
@@ -42,9 +46,11 @@ class World {
     private generateChunks(): void {
         const firstChunkIndex = 0
         const lastChunkIndex = startChunkIndex + maxChunksToRight
+
         for (let i = startChunkIndex - maxChunksToLeft; i <= startChunkIndex + maxChunksToRight; i++) {
             if (!this.props.chunks[i]) {
                 this.props.chunks[i] = new Chunk({
+                    prng: this.props.prng,
                     width: chunkWidth, 
                     borders: {
                         left: i === firstChunkIndex,
