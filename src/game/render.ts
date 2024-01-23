@@ -1,4 +1,8 @@
-import { blockSize, chunkWidth, playerSize, screenSize } from "./../game-config"
+import {
+    blockSize, chunksRenderedByDirection,
+    chunkWidth, playerSize, screenSize,
+    visionScale
+} from "./../game-config"
 import Game from "./index"
 
 type RequestAnimationFrameFunction = typeof requestAnimationFrame
@@ -50,18 +54,18 @@ function renderGame(
 
     function drawChunks() {
         const chunksAmount = Object.keys(chunks).length
-        const currentChunkIndex = Math.floor(cameraX / (chunkWidth * blockSize.width))
+        const currentChunkIndex = Math.floor(cameraX / (chunkWidth * blockSize.width * visionScale))
 
-        const startChunkIndex = Math.max(0, currentChunkIndex - 1)
-        const endChunkIndex = Math.min(chunksAmount - 1, currentChunkIndex + 1)
+        const startChunkIndex = Math.max(0, currentChunkIndex - chunksRenderedByDirection)
+        const endChunkIndex = Math.min(chunksAmount - 1, currentChunkIndex + chunksRenderedByDirection)
 
         for (let chunkIndex = startChunkIndex; chunkIndex <= endChunkIndex; chunkIndex++) {
             const chunk = chunks[chunkIndex]
     
             for (let blockIndex = 0; blockIndex < chunk.props.data.length; blockIndex++) {
                 const block = chunk.props.data[blockIndex]
-                const x = (blockIndex % chunkWidth) * blockSize.width + chunkIndex * chunkWidth * blockSize.width
-                const y = Math.floor(blockIndex / chunkWidth) * blockSize.height
+                const x = ((blockIndex % chunkWidth) * blockSize.width + chunkIndex * chunkWidth * blockSize.width) * visionScale
+                const y = (Math.floor(blockIndex / chunkWidth) * blockSize.height) * visionScale
     
                 if (block.props.clipping) {
                     const blockSpriteX = block.props.clipping.x
@@ -79,8 +83,8 @@ function renderGame(
                         blockClippingHeight,
                         blockX,
                         blockY,
-                        blockSize.width,
-                        blockSize.height
+                        blockSize.width * visionScale,
+                        blockSize.height * visionScale
                     )
                 }
             }
@@ -96,8 +100,8 @@ function renderGame(
         ctx.fillRect(
             playerX,
             playerY,
-            playerSize.width,
-            playerSize.height
+            playerSize.width * visionScale,
+            playerSize.height * visionScale
         )   
     }
 

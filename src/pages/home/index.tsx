@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from "react"
 
-import ResourceLoader, { Resource } from "../../game/resource-loader"
+import ResourceLoader, { PartialResource, Resource } from "../../game/resource-loader"
 import { wait } from "@testing-library/user-event/dist/utils"
 import Player, { getPlayerAction } from "../../game/player"
 import KeyboardListener from "../../keyboard-listener"
@@ -9,14 +9,16 @@ import { screenSize } from "../../game-config"
 import renderGame from "../../game/render"
 import Game from "../../game"
 
-import spritesSource from "../../assets/img/sprites.png"
-
-const soundtrackSource = require("../../assets/aud/soundtrack.mp3") as string
+const soundtrackSource = require("../../assets/aud/soundtrack.mp3")
+const steveSkinSource = require("../../assets/img/skins/steve.png")
+const logoIntroSource = require("../../assets/img/logo-intro.png")
+const spritesSource = require("../../assets/img/sprites.png")
+const logoSource = require("../../assets/img/logo.png")
 
 ///import styles from "./style.module.scss"
 
 const HomePage: FC = () => {
-    const [ currentSoundtrack, setCurrentSoundtrack ] = useState<HTMLAudioElement | null>(null)
+    const [ loadedResources, setLoadedResources ] = useState<Resource[]>([])
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
 
     function handleGameScreenReady(canvas: HTMLCanvasElement) {
@@ -36,14 +38,15 @@ const HomePage: FC = () => {
             try {
                 soundtrack.loop = true
                 soundtrack.volume = .3
-                await soundtrack.play()
+                //await soundtrack.play()
             } catch(error) {
                 await wait(1000)
                 return await playSoundtrack(soundtrack)
             }
         }
 
-        const player = new Player({ skin: new Image() })
+        const playerSkin = new Image()
+        const player = new Player({ skin: playerSkin })
         const game = new Game({ player: player })
 
         const keyboardListener = new KeyboardListener(document)
@@ -59,28 +62,50 @@ const HomePage: FC = () => {
                 loadEventName: "loadeddata",
                 resourceObject: new Audio(),
                 source: soundtrackSource
-            }
+            },
+            {
+                name: "Skin: Steve",
+                loadEventName: "load",
+                resourceObject: playerSkin,
+                source: steveSkinSource
+            },
+            {
+                name: logoIntroSource,
+                loadEventName: "load",
+                resourceObject: new Image(),
+                source: logoIntroSource
+            },
+            {
+                name: logoSource,
+                loadEventName: "load",
+                resourceObject: new Image(),
+                source: logoSource
+            },
         ] })
 
         resourceLoader.subscribe(async (event, ...args) => {
             if (event === "loadedResource") {
                 const resource: Resource = args[0]
 
+                setLoadedResources(prevLoadedResources => [...prevLoadedResources, resource])
+
                 if (resource.name === soundtrackSource) {
                     const soundtrack = resource.resourceObject
-                    setCurrentSoundtrack(soundtrack)
                     await playSoundtrack(soundtrack)
-
-                } else if (resource.name === spritesSource) {
-                    if (!canvas) return
-
-                    const sourceImage = resource.resourceObject
-
-                    player.subscribe((eventType) => console.log(eventType))
-                    keyboardListener.subscribe((keyPressed) => handleKeyPressed(keyPressed, player))
-
-                    renderGame(game, canvas, sourceImage, requestAnimationFrame)
                 }
+
+            } else if (event === "loadedAllResources") {
+                const resources: PartialResource[] = args[0]
+                const resource = resources.find(resource => resource.name === spritesSource)
+
+                if (!canvas || !resource) return
+
+                const sourceImage = resource.resourceObject
+
+                player.subscribe((eventType) => console.log(eventType))
+                keyboardListener.subscribe((keyPressed) => handleKeyPressed(keyPressed, player))
+
+                renderGame(game, canvas, sourceImage, requestAnimationFrame)
             }
         })
 
@@ -88,13 +113,23 @@ const HomePage: FC = () => {
 
         return () => {
             keyboardListener.destroy()
-            resourceLoader.destroy();
+            resourceLoader.destroy()
         }
     }, [canvas])
 
     return (
         <>
             <GameScreen size={screenSize} onReady={handleGameScreenReady}/>
+            <ul>
+                {loadedResources.map(loadedResource => {
+                    //const currentDate = new Date()
+                    //const currentDateString = currentDate.toLocaleString("", { language: "pt-br", baseName: "br" })
+
+                    return (
+                        <li key={Math.random()}><b>[Loaded Resource]:</b> {loadedResource.name}</li>
+                    )
+                })}
+            </ul>
         </>
     )
 }

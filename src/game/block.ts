@@ -13,9 +13,12 @@ export type BlockProps = {
     name: string
     type: string
     isSolid: boolean
+    isLiquid?: boolean
+    isLiquidSource?: boolean
+    liquidSourceBlock?: Block
+    dischargeLevel?: number
     destroyed: boolean
     clipping?: Clipping
-    image?: HTMLImageElement
     resistance?: Resistance
     currentResistance?: Resistance
     idealTool?: string

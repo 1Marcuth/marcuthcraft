@@ -1,3 +1,10 @@
+# Calcular X, Y global
+
+```ts
+const y = Math.floor(blockIndex / chunkWidth)
+const x = chunkIndex * chunkWidth + Math.floor((blockIndex + 1) % chunkWidth)
+```
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

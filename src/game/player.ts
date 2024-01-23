@@ -132,6 +132,10 @@ class Player {
             observer(eventType, ...args)
         }
     }
+
+    public setSkinImage(skinImage: HTMLImageElement) {
+        this.props.skin = skinImage
+    }
 }
 
 export default Player

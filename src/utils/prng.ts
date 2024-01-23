@@ -1,5 +1,5 @@
 class PRNG {
-    private seed: number
+    public seed: number
 
     constructor(seed: string | number) {
         if (typeof seed === "string") {

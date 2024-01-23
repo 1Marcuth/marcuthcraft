@@ -1,6 +1,4 @@
-import { createNoise2D } from "simplex-noise"
-
-import randInt from "../utils/randint"
+import { generateNoiseForHeightMap } from "../utils/generate-noise"
 import {
     bedrockEnd, blocks, coalEnd, coalGenerationChance,
     coalStart, diamondEnd, diamondGenerationChance,
@@ -10,8 +8,6 @@ import {
 } from "./../game-config"
 import PRNG from "../utils/prng"
 import Block from "./block"
-
-const noise2D = createNoise2D()
 
 const bedrockIndex = blocks.findIndex((block) => block.type === "BEDROCK")
 const stoneIndex = blocks.findIndex((block) => block.type === "STONE")
@@ -24,43 +20,16 @@ const ironOreIndex = blocks.findIndex((block) => block.type === "IRON_ORE")
 const goldOreIndex = blocks.findIndex((block) => block.type === "GOLD_ORE")
 const diamondOreIndex = blocks.findIndex((block) => block.type === "DIAMOND_ORE")
 
-function generateCaveNoise(x: number, y: number): number {
-    const frequency = .02
-    const amplitude = randInt(20, 100) / 10
-    const caveNoiseValue = noise2D(x * frequency, y * frequency) * amplitude
-    return (caveNoiseValue + 1) / 2
-}
-
-function generateCaves(chunk: Chunk): void {
-    for (let y = 0; y < worldHeight; y++) {
-        for (let x = 0; x < chunk.props.width; x++) {
-            const caveNoise = generateCaveNoise(x, y)
-            const airBlock = blocks[airIndex]
-
-            if (caveNoise < 0.3) {
-                const blockIndex = y * chunk.props.width + x
-                const lowerBlockIndex = blockIndex - chunk.props.width
-                const lowerBlock = chunk.props.data[lowerBlockIndex]
-
-                if (chunk.props.data[blockIndex].props.type === "BEDROCK") return
-
-                chunk.props.data[blockIndex] = new Block({
-                    name: airBlock.name,
-                    type: airBlock.type,
-                    isSolid: airBlock.isSolid,
-                    resistance: airBlock.resistance,
-                    clipping: airBlock.clipping,
-                    lowerBlockType: lowerBlock ? lowerBlock.props.type : undefined
-                })
-            }
-        }
-    }
-}
-
-function selectBlock(index: number, chunk: Chunk, prng: PRNG): number {
+function selectBlock(index: number, chunk: Chunk, prng: PRNG, noiseHeight: number): number {
     const y = Math.floor(index / chunk.props.width)
 
-    if (chunk.props.borders.left && (index + 1) % chunk.props.width === 0 ) {
+    const currentDirtStart = Math.round(dirtStart + (noiseHeight * 4))
+    const currentDirtEnd = Math.round(dirtEnd + (noiseHeight * 4))
+
+    const lowerBlockIndex = index - chunk.props.width
+    const lowerBlock = chunk.props.data[lowerBlockIndex]
+
+    if (chunk.props.borders.left && (index + 1) % chunk.props.width === 0) {
         return bedrockIndex
     } else if(chunk.props.borders.right && index % chunk.props.width === 0) {
         return bedrockIndex
@@ -76,29 +45,20 @@ function selectBlock(index: number, chunk: Chunk, prng: PRNG): number {
         }
 
         return bedrockIndex
-    } else if (y >= dirtStart && y <= dirtEnd) {
-        const lowerBlockIndex = index - chunk.props.width
-        const lowerBlock = chunk.props.data[lowerBlockIndex]
-
+    } else if (y >= currentDirtStart && y <= currentDirtEnd) {
         if (lowerBlock.props.type === "GRASS" || lowerBlock.props.lowerBlockType === "GRASS") {
             return airIndex
         }
 
-        if (y === dirtStart) {
-            return prng.next() < .3 ? stoneIndex : dirtyIndex
-        } else if (y === dirtEnd - 1) {
-            return prng.next() < .4 ? grassIndex : dirtyIndex
-        } else if (y === dirtEnd - 2) {
-            return prng.next() < .2 ? grassIndex : dirtyIndex
-        } else if (y === dirtEnd) {
+        if (currentDirtEnd === y) {
             return grassIndex
         }
 
         return dirtyIndex
-    } else if (y > bedrockEnd && y < dirtStart) {
-        if (y === dirtStart - 1) {
+    } else if (y > bedrockEnd && y < currentDirtStart) {
+        if (y === currentDirtStart - 1) {
             return prng.next() < .5 ? dirtyIndex : stoneIndex
-        } else if (y === dirtStart - 1) {
+        } else if (y === currentDirtStart - 2) {
             return prng.next() < .25 ? dirtyIndex : stoneIndex
         }
 
@@ -123,12 +83,16 @@ function selectBlock(index: number, chunk: Chunk, prng: PRNG): number {
 
         return stoneIndex
     } else {
+        if (lowerBlock.props.type === "DIRT") {
+            return grassIndex
+        }
+
         return airIndex
     }
 }
 
-function generateBlock(index: number, chunk: Chunk, prng: PRNG): Block {
-    const selectedBlockIndex = selectBlock(index, chunk, prng)
+function generateBlock(index: number, chunk: Chunk, prng: PRNG, noiseHeight: number): Block {
+    const selectedBlockIndex = selectBlock(index, chunk, prng, noiseHeight)
     const selectedBlock = blocks[selectedBlockIndex]
 
     const lowerBlockIndex = index - chunk.props.width
@@ -174,18 +138,15 @@ class Chunk {
 
     private generateData() {
         const { width } = this.props
-        const cavesGenerationChance = .1
+        const noiseHeightMap = generateNoiseForHeightMap(width, this.props.prng.seed, 30, 2, .5, 2)
 
         for (let i = 0; i < width * worldHeight; i++) {
-            const block = generateBlock(i, this, this.props.prng)
+            const noiseIndex = Math.min(Math.max(0, Math.floor(i / this.props.width)), noiseHeightMap.length - 1)
+            const block = generateBlock(i, this, this.props.prng, noiseHeightMap[noiseIndex])
             this.props.data.push(block)
         }
 
         this.props.data = this.props.data.reverse()
-
-        // if (Math.random() < cavesGenerationChance) {
-        //     generateCaves(this, prng)
-        // }
     }
 }
 

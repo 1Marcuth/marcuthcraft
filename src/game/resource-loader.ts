@@ -16,21 +16,28 @@ type EventListenerToDestroy = {
 
 export type ResourceLoaderProps = {
     resources: Resource[]
+    loadedCount: number
     elementsToDestroy: HTMLElement[]
     eventListenersToDestroy: EventListenerToDestroy[]
 }
 
 enum ResourceLoaderEvents {
-    loadedResource
+    loadedResource,
+    loadedAllResources
 }
 
 type ResourceLoaderEventType = keyof typeof ResourceLoaderEvents
 
 type Observer = (eventType: ResourceLoaderEventType, ...args: any[]) => any
 
-type ResourceLoaderPartialProps = Omit<ResourceLoaderProps, "elementsToDestroy" | "eventListenersToDestroy">
+type ResourceLoaderPartialProps = Omit<ResourceLoaderProps, "elementsToDestroy" | "eventListenersToDestroy" | "loadedCount">
 
 type LoadResourceCallback = () => any
+
+export type PartialResource = {
+    name: string
+    resourceObject: any
+}
 
 function loadResource(resource: Resource, loader: ResourceLoader, callback: LoadResourceCallback): void {
     resource.resourceObject.src = resource.source
@@ -54,15 +61,34 @@ class ResourceLoader {
     public constructor(props: ResourceLoaderPartialProps) {
         this.props = {
             ...props,
+            loadedCount: 0,
             elementsToDestroy: [],
             eventListenersToDestroy: []
         }
     }
 
+    public incrementLoadedCount() {
+        this.props.loadedCount++
+    }
+
     public load(): void {
         for (const resource of this.props.resources) {
             loadResource(resource, this, () => {
+                this.incrementLoadedCount()
                 this.notifyAll("loadedResource", resource)
+
+                if (this.props.loadedCount === this.props.resources.length) {
+                    const partialResources: PartialResource[] = this.props.resources.map(resource => {
+                        const partialResource = {
+                            name: resource.name,
+                            resourceObject: resource.resourceObject
+                        }
+
+                        return partialResource
+                    })
+
+                    this.notifyAll("loadedAllResources", partialResources)
+                }
             })
         }
     }

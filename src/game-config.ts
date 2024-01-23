@@ -3,6 +3,8 @@ export const screenSize = {
     height: 600
 }
 
+export const visionScale = .25
+export const chunksRenderedByDirection = 4
 export const bedrockEnd = 5
 export const dirtStart = 65
 export const dirtEnd = dirtStart + 5
@@ -22,20 +24,22 @@ export const diamondGenerationChance = 0.0030
 export const maxHeight = 12
 export const minHeight = 0
 export const chunkWidth = 16
-export const startChunkIndex = 10
-export const maxChunksToLeft = startChunkIndex
-export const maxChunksToRight = startChunkIndex - 1
+export const maxChunksToLeft = 10
+export const maxChunksToRight = maxChunksToLeft
+export const startChunkIndex = Math.floor((maxChunksToLeft + maxChunksToLeft) / 2)
 export const defaultMoveSpeed = 60
 export const worldHeight = 128
 export const blockSize = { width: 60, height: 60 }
+export const maxCaveHeigh = 20
+
 export const playerSize = {
     width: blockSize.width / 2,
     height: blockSize.height * 2
 }
 
 export const playerSpawnCoord = {
-    x: Math.floor((startChunkIndex + 1 + maxChunksToRight) * chunkWidth / 2) * blockSize.width,
-    y: ((worldHeight - dirtEnd) - 8) * blockSize.height
+    x: (Math.floor((startChunkIndex + 1 + maxChunksToRight) * chunkWidth / 2) * blockSize.width) * visionScale,
+    y: (((worldHeight - dirtEnd) - 8) * blockSize.height) * visionScale
 }
 
 export const blocks = [
