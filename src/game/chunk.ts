@@ -1,4 +1,3 @@
-import { generateNoiseForHeightMap } from "../utils/generate-noise"
 import {
     bedrockEnd, blocks, coalEnd, coalGenerationChance,
     coalStart, diamondEnd, diamondGenerationChance,
@@ -6,8 +5,10 @@ import {
     goldGenerationChance, goldStart, ironEnd,
     ironGenerationChance, ironStart, worldHeight
 } from "./../game-config"
+import Noise from "../utils/noise"
 import PRNG from "../utils/prng"
 import Block from "./block"
+
 
 const bedrockIndex = blocks.findIndex((block) => block.type === "BEDROCK")
 const stoneIndex = blocks.findIndex((block) => block.type === "STONE")
@@ -23,8 +24,8 @@ const diamondOreIndex = blocks.findIndex((block) => block.type === "DIAMOND_ORE"
 function selectBlock(index: number, chunk: Chunk, prng: PRNG, noiseHeight: number): number {
     const y = Math.floor(index / chunk.props.width)
 
-    const currentDirtStart = Math.round(dirtStart + (noiseHeight * 4))
-    const currentDirtEnd = Math.round(dirtEnd + (noiseHeight * 4))
+    const currentDirtStart = dirtStart + Math.round(noiseHeight * 10.5)
+    const currentDirtEnd = dirtEnd + Math.round(noiseHeight * 10.5)
 
     const lowerBlockIndex = index - chunk.props.width
     const lowerBlock = chunk.props.data[lowerBlockIndex]
@@ -120,6 +121,7 @@ export type ChunkProps = {
     borders: Borders
     data: Block[],
     prng: PRNG
+    index: number
 }
 
 type ChunkPartialProps = Omit<ChunkProps, "data">
@@ -138,10 +140,19 @@ class Chunk {
 
     private generateData() {
         const { width } = this.props
-        const noiseHeightMap = generateNoiseForHeightMap(width, this.props.prng.seed, 30, 2, .5, 2)
+
+        const noiseHeightMap = Noise.generateHeightMap({
+            seed: this.props.prng.seed,
+            offset: (this.props.index + 1) * this.props.width,
+            width: this.props.width,
+            scale: 30,
+            octaves: 2,
+            persistence: .5,
+            lacunarity: 2
+        })
 
         for (let i = 0; i < width * worldHeight; i++) {
-            const noiseIndex = Math.min(Math.max(0, Math.floor(i / this.props.width)), noiseHeightMap.length - 1)
+            const noiseIndex = i % width
             const block = generateBlock(i, this, this.props.prng, noiseHeightMap[noiseIndex])
             this.props.data.push(block)
         }

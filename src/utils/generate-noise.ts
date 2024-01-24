@@ -40,7 +40,7 @@ function generateNoiseForCaves(
     octaves: number,
     persistence: number,
     lacunarity: number,
-    smoothingIterations: number = 10
+    smoothingIterations: number = 0
 ) {
     const noiseMap: number[][] = []
 
@@ -56,7 +56,7 @@ function generateNoiseForCaves(
                 const sampleX = x / scale * frequency
                 const sampleY = y / scale * frequency
 
-                const perlinValue = Perlin.noise(sampleX, sampleY)
+                const perlinValue = Perlin.noise(seed, sampleX, sampleY)
                 //console.log(perlinValue)
                 noiseHeight += perlinValue * amplitude
 

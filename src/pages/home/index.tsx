@@ -64,7 +64,7 @@ const HomePage: FC = () => {
                 source: soundtrackSource
             },
             {
-                name: "Skin: Steve",
+                name: steveSkinSource,
                 loadEventName: "load",
                 resourceObject: playerSkin,
                 source: steveSkinSource
@@ -119,14 +119,19 @@ const HomePage: FC = () => {
 
     return (
         <>
+            <h1 style={{ textAlign: "center", marginBottom: "1rem", marginTop: "1rem" }}>MarcuthCraft</h1>
             <GameScreen size={screenSize} onReady={handleGameScreenReady}/>
             <ul>
                 {loadedResources.map(loadedResource => {
-                    //const currentDate = new Date()
-                    //const currentDateString = currentDate.toLocaleString("", { language: "pt-br", baseName: "br" })
+                    const maxLength = 30
+
+                    const slicedResourceName = (loadedResource.name.length > maxLength ?
+                        loadedResource.name.slice(0, maxLength) + "..." :
+                        loadedResource.name
+                    )
 
                     return (
-                        <li key={Math.random()}><b>[Loaded Resource]:</b> {loadedResource.name}</li>
+                        <li key={Math.random()}><b>[Loaded Resource]:</b> {slicedResourceName}</li>
                     )
                 })}
             </ul>

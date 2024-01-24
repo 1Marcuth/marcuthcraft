@@ -1,5 +1,8 @@
 class PRNG {
     public seed: number
+    private a = 1664525
+    private c = 1013904223
+    private m = Math.pow(2, 32)
 
     constructor(seed: string | number) {
         if (typeof seed === "string") {
@@ -20,17 +23,35 @@ class PRNG {
     }
 
     private lcgRandom(): number {
-        const a = 1664525
-        const c = 1013904223
-        const m = Math.pow(2, 32)
-
-        this.seed = (a * this.seed + c) % m
-
-        return Math.abs(this.seed / m)
+        this.seed = (this.a * this.seed + this.c) % this.m
+        return Math.abs(this.seed / this.m)
     }
 
-    public next(): number {
-        return this.lcgRandom()
+    public next(minOrMax?: number, max?: number): number {
+        const value = this.lcgRandom()
+
+        let min: number | undefined = minOrMax
+
+        if (!min) min = 0
+
+        if (max) {
+            max = min
+            min = 0
+        }
+
+        if (min === 0 || (max === undefined || max === 0 || max === 1)) {
+            return this.lcgRandom()
+        }
+
+        if (min === max) return this.lcgRandom() + min
+
+        if (min > max) {
+            minOrMax = max
+            max = min
+            min = minOrMax
+        }
+
+        return this.lcgRandom() * (max - min) + min
     }
 }
 

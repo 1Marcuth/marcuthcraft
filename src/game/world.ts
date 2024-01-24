@@ -6,6 +6,8 @@ import Player from "./player"
 import Chunk from "./chunk"
 import { generateNoiseForCaves } from "../utils/generate-noise"
 import Block from "./block"
+import Perlin from "../utils/perlin"
+import Noise from "../utils/noise"
 
 type Chunks = {
     [key: number]: Chunk
@@ -43,12 +45,17 @@ class World {
         }
 
         this.generateChunks()
-        this.generateMountains()
         this.generateCaves()
 
-        if (!diamondOreBlock) return
+        //if (!diamondOreBlock) return
 
-        this.setBlockAt(0, 0, new Block({ ...diamondOreBlock }))
+        //this.setBlockAt(0, 0, new Block({ ...diamondOreBlock }))
+    }
+
+    private getChunkAndBlockIndices(globalBlockIndex: number): { chunkIndex: number, blockIndex: number } {
+        const chunkIndex = Math.floor(globalBlockIndex / (chunkWidth * worldHeight))
+        const blockIndex = Math.floor(globalBlockIndex % (chunkWidth * worldHeight))
+        return { chunkIndex, blockIndex }
     }
 
     private generateChunks(): void {
@@ -58,6 +65,7 @@ class World {
         for (let i = startChunkIndex - maxChunksToLeft; i <= startChunkIndex + maxChunksToRight; i++) {
             if (!this.props.chunks[i]) {
                 this.props.chunks[i] = new Chunk({
+                    index: i,
                     prng: this.props.prng,
                     width: chunkWidth, 
                     borders: {
@@ -69,62 +77,35 @@ class World {
         }
     }
 
-    private generateMountains(): void {
-        /*
-        const chunksAmount = Object.keys(this.props.chunks).length
-        const worldWidth = chunkWidth * chunksAmount
-
-        for (let chunkIndex = 0; chunkIndex < worldWidth / chunkWidth; chunkIndex++) {
-            
-        }
-        */
-    }
-
     private generateCaves(): void {
         const chunksAmount = Object.keys(this.props.chunks).length;
         const worldWidth = chunkWidth * chunksAmount;
-        const caveWidth = worldWidth;
-        const caveHeight = worldHeight;
-        const caveStartAtY = 20;
-        
-        const caveNoise = generateNoiseForCaves(this.props.prng.seed, caveWidth, caveHeight, 20, 50, 0.5, 2)
-
-        for (let x = 0; x < caveWidth; x++) {
-            for (let y = 0; y < caveHeight; y++) {
-                const globalBlockIndex = x * y
-                const chunkIndex = Math.floor(globalBlockIndex / (chunkWidth * worldHeight))
-                const blockIndex = Math.floor(globalBlockIndex / chunkWidth)
-                const caveValue = caveNoise[x][y]
     
-                if (true) {
-                    const currentBlock = this.getBlockAt(chunkIndex, blockIndex)
+        const cavesMap = Noise.generateCavesMap({
+            seed: this.props.prng.seed,
+            width: worldWidth,
+            height: worldHeight,
+            threshold: 0.1, // Adjust the value of the threshold to control the amount of caves
+        })
     
-                    if (airBlock/*currentBlock && currentBlock.props.type !== "BEDROCK" && airBlock*/) {
-                        const block = new Block({ ...airBlock })
+        for (let chunkIndex = 0; chunkIndex < chunksAmount; chunkIndex++) {
+            for (let blockIndex = 0; blockIndex < chunkWidth * worldHeight; blockIndex++) {
+                const x = chunkIndex * chunkWidth + Math.floor(blockIndex / worldHeight);
+                const y = blockIndex % worldHeight
 
-                        this.setBlockAt(chunkIndex, blockIndex, block)
+                const currentBlock = this.getBlockAt(chunkIndex, blockIndex)
+    
+                const isVoid = cavesMap[x][y] === 0
+    
+                if (isVoid && airBlock && currentBlock?.props.type !== "BEDROCK" && currentBlock?.props.type !== "AIR") {
+                    const currentBlock = this.getBlockAt(chunkIndex, blockIndex);
+                    const isEdgeBlock = x === 0 || x === worldWidth - 1 || y === 0 || y === worldHeight - 1
+    
+                    const transitionThreshold = isEdgeBlock ? 0.1 : 0.5
+    
+                    if (!currentBlock || this.props.prng.next() < transitionThreshold) {
+                        this.setBlockAt(chunkIndex, blockIndex, new Block({ ...airBlock }))
                     }
-                    /*
-                    const widthVariation = Math.sin((x / caveWidth) * Math.PI) * 2
-                    const tunnelWidth = 4 + widthVariation
-    
-                    for (let tunnelY = -tunnelWidth / 2; tunnelY < tunnelWidth / 2; tunnelY++) {
-                        const adjustedY = y + tunnelY
-
-                        if (adjustedY >= 0 && adjustedY < worldHeight) {
-                            const currentBlock = this.getBlockAt(chunkIndex, blockIndex)
-    
-                            if (currentBlock && currentBlock.props.type !== "BEDROCK" && airBlock) {
-                                const block = new Block({
-                                    name: airBlock.name,
-                                    isSolid: airBlock.isSolid,
-                                    type: airBlock.type,
-                                })
-    
-                                this.setBlockAt(chunkIndex, blockIndex, block)
-                            }
-                        }
-                    }*/
                 }
             }
         }
@@ -132,8 +113,6 @@ class World {
 
     private getBlockAt(chunkIndex: number, blockIndex: number): Block | undefined {
         const chunk = this.props.chunks[chunkIndex]
-
-        //console.log(chunkIndex, blockIndex)
 
         if (chunk) {
             const block = chunk.props.data[blockIndex]
