@@ -98,6 +98,10 @@ const HomePage: FC = () => {
             {
                 resourceObject: new Image(),
                 source: widgetsSource
+            },
+            {
+                resourceObject: new Image(),
+                source: mainMenuBackgroundBlur
             }
         ] })
 

@@ -19,14 +19,19 @@ type ImageClipping = {
 
 type DrawProps = {
     image?: HTMLImageElement
+    imageMouseOver?: HTMLImageElement
     imageClipping?: ImageClipping
+    imageMouseOverClipping?: ImageClipping
     color?: string
+    colorMouseOver?: string
 }
 
 class CanvasButton {
     public props: CanvasButtonProps
 
     private isEventListenersAdded: boolean = false
+    private lastMouseMovementCheck: number = 0
+    private isMouseOver: boolean = false
 
     public constructor(props: CanvasButtonProps) {
         this.props = props
@@ -47,6 +52,8 @@ class CanvasButton {
     }
 
     private handleMouseMove(event: MouseEvent) {
+        const currentTime = Date.now()
+
         const { offsetX, offsetY } = event
         const { x, y, width, height } = this.props
 
@@ -56,11 +63,16 @@ class CanvasButton {
             offsetX >= x &&
             offsetX <= x + width &&
             offsetY >= y &&
-            offsetY <= y + height
+            offsetY <= y + height &&
+            !this.isMouseOver
         ) {
             ctx.canvas.style.cursor = "pointer"
-        } else {
+            this.isMouseOver = true
+            this.lastMouseMovementCheck = currentTime
+        } else if (this.isMouseOver && currentTime > this.lastMouseMovementCheck + 150) {
+            this.lastMouseMovementCheck = currentTime
             ctx.canvas.style.cursor = "auto"
+            this.isMouseOver = false
         }
     }
 
@@ -103,14 +115,21 @@ class CanvasButton {
     public draw({
         image,
         imageClipping,
-        color
+        imageMouseOver,
+        imageMouseOverClipping,
+        color,
+        colorMouseOver
     }: DrawProps) {        
         if (!image && !color) return
 
+        const selectedImage = this.isMouseOver ? (imageMouseOver && imageMouseOverClipping ? imageMouseOver : image) : image
+        const selectedImageClipping = this.isMouseOver ? (imageMouseOver && imageMouseOverClipping ? imageMouseOverClipping : imageClipping) : imageClipping
+        const selectedColor = this.isMouseOver ? (colorMouseOver ? colorMouseOver : color) : color
+
         const { ctx } = this.props
 
-        if (color) {
-            ctx.fillStyle = color
+        if (selectedColor) {
+            ctx.fillStyle = selectedColor
 
             ctx.fillRect(
                 this.props.x,
@@ -119,14 +138,14 @@ class CanvasButton {
                 this.props.height
             )
 
-        } else if (image) {
-            if (imageClipping) {
+        } else if (selectedImage) {
+            if (selectedImageClipping) {
                 ctx.drawImage(
-                    image,
-                    imageClipping.x,
-                    imageClipping.y,
-                    imageClipping.width,
-                    imageClipping.height,
+                    selectedImage,
+                    selectedImageClipping.x,
+                    selectedImageClipping.y,
+                    selectedImageClipping.width,
+                    selectedImageClipping.height,
                     this.props.x,
                     this.props.y,
                     this.props.width,
@@ -134,7 +153,7 @@ class CanvasButton {
                 )
             } else {
                 ctx.drawImage(
-                    image,
+                    selectedImage,
                     this.props.x,
                     this.props.y,
                     this.props.width,
@@ -151,7 +170,7 @@ class CanvasButton {
             ctx.canvas.addEventListener("mouseup", this.handleMouseUp)
             ctx.canvas.addEventListener("click", this.handleClick)
             ctx.canvas.addEventListener("dblclick", this.handleDoubleClick)
-            //ctx.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this))
+            ctx.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this))
             this.isEventListenersAdded = true
         }
     }
@@ -164,7 +183,7 @@ class CanvasButton {
             ctx.canvas.removeEventListener("mouseup", this.handleMouseUp)
             ctx.canvas.removeEventListener("click", this.handleClick)
             ctx.canvas.removeEventListener("dblclick", this.handleDoubleClick)
-            //ctx.canvas.removeEventListener("mousemove", this.handleMouseMove)
+            ctx.canvas.removeEventListener("mousemove", this.handleMouseMove)
             this.isEventListenersAdded = false
         }
 

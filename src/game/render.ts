@@ -1,12 +1,12 @@
-import { Resource } from './resource-loader';
+import SplashMessageManager from "./splash-message-manager"
+import CanvasButton from "../utils/canvas-ui/button"
+import { Resource } from "./resource-loader"
+import Game from "./index"
 import {
     blockSize, chunksRenderedByDirection,
     chunkWidth, playerSize, screenSize,
     visionScale
 } from "../game-config"
-import Game from "./index"
-import CanvasButton from '../utils/canvas-ui/button';
-import SplashMessageManager from './splash-message-manager';
 
 type RequestAnimationFrameFunction = typeof requestAnimationFrame
 
@@ -54,7 +54,10 @@ export type GameRenderNewProps = {
 }
 
 type CanvasContext = CanvasRenderingContext2D & { [key: string]: string }
-type CanvasWidget = CanvasButton
+
+type GameRenderWidget = CanvasButton
+
+type GameRenderWidgets = { [key: string]: GameRenderWidget }
 
 class GameRender {
     public props: GameRenderProps
@@ -63,6 +66,7 @@ class GameRender {
     private fps: number = 0
 
     private backgroundLayerTwoOffsetX: number = 0
+    private widgets: GameRenderWidgets = {}
 
     public constructor(props: GameRenderProps) {
         this.props = props
@@ -70,6 +74,19 @@ class GameRender {
 
     public setProps(newProps: GameRenderNewProps) {
         this.props = Object.assign(this.props, newProps)
+    }
+
+    private addWidget(key: string, widget: GameRenderWidget) {
+        this.widgets[key] = widget
+    }
+
+    private removeUnnecessaryWidgets() {
+        for (const widgetKey in this.widgets) {
+            if (!this.props.currentScreen || !widgetKey.startsWith(this.props.currentScreen)) {
+                this.widgets[widgetKey].destroy()
+                delete this.widgets[widgetKey]
+            }
+        }
     }
 
     public pause() {
@@ -82,11 +99,13 @@ class GameRender {
     }
 
     private drawFps(ctx: CanvasRenderingContext2D) {
-        const x = 50
+        const x = 10
         const y = 20
 
         ctx.fillStyle = "#fff"
+        ctx.textAlign = "left"
         ctx.font = "15px Minecraft"
+        
         ctx.fillText(`FPS: ${this.fps}`, x, y)
     }
 
@@ -111,8 +130,9 @@ class GameRender {
     }: GameRenderProps) {
         const ctx = $canvas.getContext("2d") as CanvasContext
         
+        const addWidget = this.addWidget.bind(this)
         const setProps = this.setProps.bind(this)
-        const canvasWidgets: CanvasWidget[] = []
+        const widgets = this.widgets
 
         if (currentScreen === "mainMenu") this.backgroundLayerTwoOffsetX -= .5
         const backgroundLayerTwoOffsetX = this.backgroundLayerTwoOffsetX
@@ -355,9 +375,7 @@ class GameRender {
             }
 
             function drawLayerThree() {
-                if (!images.backgroundBlur) return
-                
-                const image = images.backgroundBlur
+                const image = images.backgroundBlur!
 
                 const x = ($canvas.width - image.width) / 2
                 const y = ($canvas.height - image.height) / 2
@@ -396,14 +414,23 @@ class GameRender {
                 const buttonY = 329
 
                 function drawButton() {
-                    const button = new CanvasButton({
-                        ctx: ctx,
-                        width: buttonWidth,
-                        height: buttonHeight,
-                        x: buttonX,
-                        y: buttonY,
-                        onClick: () => { setProps({ currentScreen: "world" }) }
-                    })
+                    const buttonKey = "mainMenu.singlePlayerButton"
+                    let button: CanvasButton
+
+                    if (buttonKey in widgets) {
+                        button = widgets[buttonKey]
+                    } else {
+                        button = new CanvasButton({
+                            ctx: ctx,
+                            width: buttonWidth,
+                            height: buttonHeight,
+                            x: buttonX,
+                            y: buttonY,
+                            onClick: () => { setProps({ currentScreen: "world" }) }
+                        })
+
+                        addWidget(buttonKey, button)
+                    }
 
                     button.draw({
                         image: images.widgets,
@@ -412,10 +439,15 @@ class GameRender {
                             y: 15,
                             height: 15,
                             width: 150
+                        },
+                        imageMouseOver: images.widgets,
+                        imageMouseOverClipping: {
+                            x: 0,
+                            y: 30,
+                            height: 15,
+                            width: 150
                         }
                     })
-                    
-                    canvasWidgets.push(button)
                 }
 
                 function drawTextButton() {
@@ -456,14 +488,23 @@ class GameRender {
                 const buttonY = 398
 
                 function drawButton() {
-                    const button = new CanvasButton({
-                        ctx: ctx,
-                        width: buttonWidth,
-                        height: buttonHeight,
-                        x: buttonX,
-                        y: buttonY,
-                        onClick: () => { console.log("Clicked!") }
-                    })
+                    const buttonKey = "mainMenu.CreditsButton"
+                    let button: CanvasButton
+
+                    if (buttonKey in widgets) {
+                        button = widgets[buttonKey]
+                    } else {
+                        button = new CanvasButton({
+                            ctx: ctx,
+                            width: buttonWidth,
+                            height: buttonHeight,
+                            x: buttonX,
+                            y: buttonY,
+                            onClick: () => { console.log("Clicked!") }
+                        })
+
+                        addWidget(buttonKey, button)
+                    }
 
                     button.draw({
                         image: images.widgets,
@@ -472,10 +513,15 @@ class GameRender {
                             y: 15,
                             height: 15,
                             width: 150
+                        },
+                        imageMouseOver: images.widgets,
+                        imageMouseOverClipping: {
+                            x: 0,
+                            y: 30,
+                            height: 15,
+                            width: 150
                         }
                     })
-                    
-                    canvasWidgets.push(button)
                 }
 
                 function drawTextButton() {
@@ -516,14 +562,23 @@ class GameRender {
                 const buttonY = 500
 
                 function drawButton() {
-                    const button = new CanvasButton({
-                        ctx: ctx,
-                        width: buttonWidth,
-                        height: buttonHeight,
-                        x: buttonX,
-                        y: buttonY,
-                        onClick: () => {}
-                    })
+                    const buttonKey = "mainMenu.OptionsButton"
+                    let button: CanvasButton
+
+                    if (buttonKey in widgets) {
+                        button = widgets[buttonKey]
+                    } else {
+                        button = new CanvasButton({
+                            ctx: ctx,
+                            width: buttonWidth,
+                            height: buttonHeight,
+                            x: buttonX,
+                            y: buttonY,
+                            onClick: () => { console.log("Clicked!") }
+                        })
+
+                        addWidget(buttonKey, button)
+                    }
 
                     button.draw({
                         image: images.widgets,
@@ -532,10 +587,15 @@ class GameRender {
                             y: 15,
                             height: 15,
                             width: 150
+                        },
+                        imageMouseOver: images.widgets,
+                        imageMouseOverClipping: {
+                            x: 0,
+                            y: 30,
+                            height: 15,
+                            width: 150
                         }
                     })
-                    
-                    canvasWidgets.push(button)
                 }
 
                 function drawTextButton() {
@@ -581,9 +641,9 @@ class GameRender {
             const y = 160;
         
             const animationDuration = 750
-            const minFontSize = 18
+            const minFontSize = 22
             const maxFontSize = 3
-            const rotationAngle = -15 * (Math.PI / 180)
+            const rotationAngle = -17 * (Math.PI / 180)
             const currentTime = Date.now()
         
             const elapsed = (currentTime % animationDuration) / animationDuration
@@ -594,8 +654,9 @@ class GameRender {
             ctx.translate(x, y)
             ctx.rotate(rotationAngle)
         
-            ctx.textAlign = "center"
             ctx.font = `${fontSize}px Minecraft`
+            ctx.letterSpacing = "3px"
+            ctx.textAlign = "center"
             ctx.fillStyle = "#000"
         
             ctx.fillText(
@@ -630,6 +691,42 @@ class GameRender {
                 height
             )
         }
+
+        function drawTrademark() {
+            const text = "A fan game created by Marcuth"
+            const fontSize = 20
+
+            const x = fontSize / 2
+            const y = $canvas.height - (fontSize / 2)
+
+            ctx.font = `${fontSize}px Minecraft`
+            ctx.textAlign = "left"
+            ctx.fillStyle = "#fff"
+
+            ctx.fillText(
+                text,
+                x,
+                y
+            )
+        }
+
+        function drawGameVersion() {
+            const text = "v0.1"
+            const fontSize = 20
+
+            const x = $canvas.width - (fontSize / 2)
+            const y = $canvas.height - (fontSize / 2)
+
+            ctx.font = `${fontSize}px Minecraft`
+            ctx.textAlign = "right"
+            ctx.fillStyle = "#fff"
+
+            ctx.fillText(
+                text,
+                x,
+                y
+            )
+        }
     
         clearScreen()
 
@@ -651,6 +748,8 @@ class GameRender {
                 drawMainMenuLogoTitle()
                 drawMainMenuButtons()
                 drawSplashMessage()
+                drawTrademark()
+                drawGameVersion()
                 break
 
             default:
@@ -661,11 +760,8 @@ class GameRender {
 
         if (this.isRunning) {
             return requestAnimationFrame(() => {
-                for (const widget of canvasWidgets) {
-                    widget.destroy()
-                }
-
                 game.update()
+                this.removeUnnecessaryWidgets()
                 this.calculateFps(Date.now())
                 this.render(this.props)
             })
