@@ -26,7 +26,9 @@ const GameScreen: FC<IProps> = ({ size, onReady }) => {
 
             const ctx = $canvas.getContext("2d")
             
-            if (ctx) ctx.imageSmoothingEnabled = false
+            if (ctx) {
+                ctx.imageSmoothingEnabled = false
+            }
         }
 
         if ($canvas) {

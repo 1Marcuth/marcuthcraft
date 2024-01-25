@@ -5,7 +5,8 @@ import {
     visionScale
 } from "../game-config"
 import Game from "./index"
-import CanvasButton from '../utils/canvas-button';
+import CanvasButton from '../utils/canvas-ui/button';
+import SplashMessageManager from './splash-message-manager';
 
 type RequestAnimationFrameFunction = typeof requestAnimationFrame
 
@@ -25,10 +26,12 @@ type Images = {
     logo?: HTMLImageElement
     backgroundLayerTwo?: HTMLImageElement
     widgets?: HTMLImageElement
+    backgroundBlur?: HTMLImageElement
 }
 
 type GameContext = {
     getLoadedResources: () => Resource[]
+    splashMessageManager: SplashMessageManager
     amountOfResources: number
 }
 
@@ -108,10 +111,10 @@ class GameRender {
     }: GameRenderProps) {
         const ctx = $canvas.getContext("2d") as CanvasContext
         
+        const setProps = this.setProps.bind(this)
         const canvasWidgets: CanvasWidget[] = []
 
-        if (Date.now() % 5 === 0) this.backgroundLayerTwoOffsetX += 2
-
+        if (currentScreen === "mainMenu") this.backgroundLayerTwoOffsetX -= .5
         const backgroundLayerTwoOffsetX = this.backgroundLayerTwoOffsetX
     
         const chunks = game.props.world.props.chunks
@@ -245,7 +248,7 @@ class GameRender {
                 const innerFrameWidth = maxProgressBarWidth + 6
                 const innerFrameHeight = progressBarHeight + 6
     
-                ctx.fillStyle = "#EF323D"
+                ctx.fillStyle = "#ff2e3c"
             
                 ctx.fillRect(
                     innerFrameX,
@@ -279,7 +282,7 @@ class GameRender {
             const loadedResources = gameContext.getLoadedResources()
             const loadedResourcesAmount = loadedResources.length
             const lastLoadedResource = loadedResources[loadedResources.length - 1]
-            const lastLoadedResourceName = lastLoadedResource.name
+            const lastLoadedResourceName = lastLoadedResource.source
             const maxResourceNameLength = 30
     
             const slicedLastResourceName = (lastLoadedResourceName.length > maxResourceNameLength ?
@@ -351,8 +354,25 @@ class GameRender {
                 }
             }
 
+            function drawLayerThree() {
+                if (!images.backgroundBlur) return
+                
+                const image = images.backgroundBlur
+
+                const x = ($canvas.width - image.width) / 2
+                const y = ($canvas.height - image.height) / 2
+
+                ctx.drawImage(
+                    image,
+                    x,
+                    y
+                )
+                   
+            }
+
             drawLayerOne()
-            drawLayerTwo()            
+            drawLayerTwo()  
+            drawLayerThree()          
         }
 
         function drawMainMenuLogoTitle() {
@@ -370,10 +390,10 @@ class GameRender {
 
         function drawMainMenuButtons() {
             function drawSinglePlayerButton() {
-                const buttonWidth = 400
+                const buttonWidth = 545
                 const buttonHeight = Math.round(buttonWidth / 10)
                 const buttonX = ($canvas.width - buttonWidth) / 2
-                const buttonY = 400
+                const buttonY = 329
 
                 function drawButton() {
                     const button = new CanvasButton({
@@ -382,37 +402,25 @@ class GameRender {
                         height: buttonHeight,
                         x: buttonX,
                         y: buttonY,
-                        onClick: () => { console.log("Clicked!") }
+                        onClick: () => { setProps({ currentScreen: "world" }) }
                     })
 
-                    if (button.isMouseOver) {
-                        button.draw({
-                            image: images.widgets,
-                            imageClipping: {
-                                x: 0,
-                                y: 30,
-                                height: 15,
-                                width: 150
-                            }
-                        })
-                    } else {
-                        button.draw({
-                            image: images.widgets,
-                            imageClipping: {
-                                x: 0,
-                                y: 15,
-                                height: 15,
-                                width: 150
-                            }
-                        })
-                    }
+                    button.draw({
+                        image: images.widgets,
+                        imageClipping: {
+                            x: 0,
+                            y: 15,
+                            height: 15,
+                            width: 150
+                        }
+                    })
                     
                     canvasWidgets.push(button)
                 }
 
                 function drawTextButton() {
                     const textX = $canvas.width / 2
-                    const textY = buttonY + (buttonHeight / 2) + 5
+                    const textY = buttonY + (buttonHeight / 2) + 7
 
                     const text = "Singleplayer"
 
@@ -442,10 +450,10 @@ class GameRender {
             }
 
             function drawCreditsButton() {
-                const buttonWidth = 400
+                const buttonWidth = 545
                 const buttonHeight = Math.round(buttonWidth / 10)
                 const buttonX = ($canvas.width - buttonWidth) / 2
-                const buttonY = 450
+                const buttonY = 398
 
                 function drawButton() {
                     const button = new CanvasButton({
@@ -457,34 +465,22 @@ class GameRender {
                         onClick: () => { console.log("Clicked!") }
                     })
 
-                    if (button.isMouseOver) {
-                        button.draw({
-                            image: images.widgets,
-                            imageClipping: {
-                                x: 0,
-                                y: 30,
-                                height: 15,
-                                width: 150
-                            }
-                        })
-                    } else {
-                        button.draw({
-                            image: images.widgets,
-                            imageClipping: {
-                                x: 0,
-                                y: 15,
-                                height: 15,
-                                width: 150
-                            }
-                        })
-                    }
+                    button.draw({
+                        image: images.widgets,
+                        imageClipping: {
+                            x: 0,
+                            y: 15,
+                            height: 15,
+                            width: 150
+                        }
+                    })
                     
                     canvasWidgets.push(button)
                 }
 
                 function drawTextButton() {
                     const textX = $canvas.width / 2
-                    const textY = buttonY + (buttonHeight / 2) + 5
+                    const textY = buttonY + (buttonHeight / 2) + 7
 
                     const text = "Credits"
 
@@ -514,10 +510,10 @@ class GameRender {
             }
 
             function drawOptionsButton() {
-                const buttonWidth = 400
+                const buttonWidth = 545
                 const buttonHeight = Math.round(buttonWidth / 10)
                 const buttonX = ($canvas.width - buttonWidth) / 2
-                const buttonY = 525
+                const buttonY = 500
 
                 function drawButton() {
                     const button = new CanvasButton({
@@ -526,37 +522,25 @@ class GameRender {
                         height: buttonHeight,
                         x: buttonX,
                         y: buttonY,
-                        onClick: () => { console.log("Clicked!") }
+                        onClick: () => {}
                     })
 
-                    if (button.isMouseOver) {
-                        button.draw({
-                            image: images.widgets,
-                            imageClipping: {
-                                x: 0,
-                                y: 30,
-                                height: 15,
-                                width: 150
-                            }
-                        })
-                    } else {
-                        button.draw({
-                            image: images.widgets,
-                            imageClipping: {
-                                x: 0,
-                                y: 15,
-                                height: 15,
-                                width: 150
-                            }
-                        })
-                    }
+                    button.draw({
+                        image: images.widgets,
+                        imageClipping: {
+                            x: 0,
+                            y: 15,
+                            height: 15,
+                            width: 150
+                        }
+                    })
                     
                     canvasWidgets.push(button)
                 }
 
                 function drawTextButton() {
                     const textX = $canvas.width / 2
-                    const textY = buttonY + (buttonHeight / 2) + 5
+                    const textY = buttonY + (buttonHeight / 2) + 7
 
                     const text = "Options..."
 
@@ -590,6 +574,62 @@ class GameRender {
             drawCreditsButton()
             drawOptionsButton()
         }
+
+        function drawSplashMessage() {
+            const splashMessage = gameContext.splashMessageManager.getCurrentMessage();
+            const x = 1000;
+            const y = 160;
+        
+            const animationDuration = 750
+            const minFontSize = 18
+            const maxFontSize = 3
+            const rotationAngle = -15 * (Math.PI / 180)
+            const currentTime = Date.now()
+        
+            const elapsed = (currentTime % animationDuration) / animationDuration
+            const fontSize = minFontSize + Math.abs(Math.sin(elapsed * Math.PI)) * maxFontSize
+        
+            ctx.save()
+        
+            ctx.translate(x, y)
+            ctx.rotate(rotationAngle)
+        
+            ctx.textAlign = "center"
+            ctx.font = `${fontSize}px Minecraft`
+            ctx.fillStyle = "#000"
+        
+            ctx.fillText(
+                splashMessage,
+                0 + 2,
+                0 + 2
+            )
+        
+            ctx.fillStyle = "#ff0"
+        
+            ctx.fillText(
+                splashMessage,
+                0,
+                0
+            )
+        
+            ctx.restore()
+        }
+
+        function drawDefaultBackground() {
+            const width = $canvas.width
+            const height = $canvas.height
+            const x = 0
+            const y = 0
+
+            ctx.fillStyle = "#ff2e3c"
+
+            ctx.fillRect(
+                x,
+                y,
+                width,
+                height
+            )
+        }
     
         clearScreen()
 
@@ -610,7 +650,11 @@ class GameRender {
                 drawMainMenuBackground()
                 drawMainMenuLogoTitle()
                 drawMainMenuButtons()
+                drawSplashMessage()
                 break
+
+            default:
+                drawDefaultBackground()
         }
 
         this.drawFps(ctx)

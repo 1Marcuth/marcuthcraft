@@ -1,23 +1,25 @@
 import { FC, useEffect, useState } from "react"
 
-import ResourceLoader, { PartialResource, Resource } from "../../game/resource-loader"
+import ResourceLoader, { Resource } from "../../game/resource-loader"
 import { wait } from "@testing-library/user-event/dist/utils"
 import Player, { getPlayerAction } from "../../game/player"
 import KeyboardListener from "../../keyboard-listener"
 import GameScreen from "../../components/game-screen"
-import { screenSize } from "../../game-config"
-import GameRender, { ScreenType } from "../../game/render"
+import { screenSize, splashMessageIntervalTime, splashMessages } from "../../game-config"
+import GameRender from "../../game/render"
 import Game from "../../game"
 
+import styles from "./style.module.scss"
+import SplashMessageManager from "../../game/splash-message-manager"
+
 const mainMenuBackgroundLayerTwo = require("../../assets/img/main-menu-background-layers/2.png")
+const mainMenuBackgroundBlur = require("../../assets/img/main-menu-background-layers/blur.png")
 const soundtrackSource = require("../../assets/aud/soundtrack.mp3")
 const steveSkinSource = require("../../assets/img/skins/steve.png")
 const logoIntroSource = require("../../assets/img/logo-intro.png")
 const textureSpritesSource = require("../../assets/img/sprites.png")
 const widgetsSource = require("../../assets/img/widgets.png")
 const logoSource = require("../../assets/img/logo.png")
-
-///import styles from "./style.module.scss"
 
 const HomePage: FC = () => {
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
@@ -49,7 +51,7 @@ const HomePage: FC = () => {
             try {
                 soundtrack.loop = true
                 soundtrack.volume = .3
-                //await soundtrack.play()
+                await soundtrack.play()
             } catch(error) {
                 await wait(1000)
                 return await playSoundtrack(soundtrack)
@@ -62,52 +64,45 @@ const HomePage: FC = () => {
 
         const keyboardListener = new KeyboardListener(document)
 
+        const splashMessageManager = new SplashMessageManager({
+            messages: splashMessages,
+            intervalTime: splashMessageIntervalTime
+        })
+
         const resourceLoader = new ResourceLoader({ resources: [
             {
-                name: logoIntroSource,
-                loadEventName: "load",
                 resourceObject: new Image(),
                 source: logoIntroSource
             },
             {
-                name: textureSpritesSource,
-                loadEventName: "load",
                 resourceObject: new Image(),
                 source: textureSpritesSource
             },
             {
-                name: soundtrackSource,
                 loadEventName: "loadeddata",
                 resourceObject: new Audio(),
                 source: soundtrackSource
             },
             {
-                name: steveSkinSource,
-                loadEventName: "load",
                 resourceObject: playerSkin,
                 source: steveSkinSource
             },
             {
-                name: logoSource,
-                loadEventName: "load",
                 resourceObject: new Image(),
                 source: logoSource
             },
             {
-                name: mainMenuBackgroundLayerTwo,
-                loadEventName: "load",
                 resourceObject: new Image(),
                 source: mainMenuBackgroundLayerTwo
             },
             {
-                name: widgetsSource,
-                loadEventName: "load",
                 resourceObject: new Image(),
                 source: widgetsSource
             }
         ] })
 
         const gameContext = {
+            splashMessageManager: splashMessageManager,
             getLoadedResources: () => loadedResources,
             amountOfResources: resourceLoader.props.resources.length
         }
@@ -120,18 +115,16 @@ const HomePage: FC = () => {
             requestAnimationFrame: requestAnimationFrame
         })
 
-        gameRender.pause()
-
         resourceLoader.subscribe(async (event, ...args) => {
             if (event === "loadedResource") {
                 const resource: Resource = args[0]
 
                 loadedResources.push(resource)
 
-                if (resource.name === soundtrackSource) {
+                if (resource.source === soundtrackSource) {
                     const soundtrack = resource.resourceObject
                     await playSoundtrack(soundtrack)
-                } else if (resource.name === logoIntroSource) {
+                } else if (resource.source === logoIntroSource) {
                     gameRender.setProps({
                         currentScreen: "intro",
                         images: {
@@ -139,32 +132,39 @@ const HomePage: FC = () => {
                             logoIntro: resource.resourceObject as HTMLImageElement
                         }
                     })
-                } else if (resource.name === logoSource) {
+                } else if (resource.source === logoSource) {
                     gameRender.setProps({
                         images: {
                             ...gameRender.props.images,
                             logo: resource.resourceObject as HTMLImageElement
                         }
                     })
-                } else if (resource.name === textureSpritesSource) {
+                } else if (resource.source === textureSpritesSource) {
                     gameRender.setProps({
                         images: {
                             ...gameRender.props.images,
                             textureSprites: resource.resourceObject as HTMLImageElement
                         }
                     })
-                } else if (resource.name === mainMenuBackgroundLayerTwo) {
+                } else if (resource.source === mainMenuBackgroundLayerTwo) {
                     gameRender.setProps({
                         images: {
                             ...gameRender.props.images,
                             backgroundLayerTwo: resource.resourceObject as HTMLImageElement
                         }
                     })
-                } else if (resource.name === widgetsSource) {
+                } else if (resource.source === widgetsSource) {
                     gameRender.setProps({
                         images: {
                             ...gameRender.props.images,
                             widgets: resource.resourceObject as HTMLImageElement
+                        }
+                    })
+                } else if (resource.source === mainMenuBackgroundBlur) {
+                    gameRender.setProps({
+                        images: {
+                            ...gameRender.props.images,
+                            backgroundBlur: resource.resourceObject as HTMLImageElement
                         }
                     })
                 }
@@ -173,6 +173,8 @@ const HomePage: FC = () => {
                 await wait(600)
 
                 gameRender.setProps({ currentScreen: "mainMenu" })
+
+                splashMessageManager.start()
 
                 player.subscribe((eventType) => console.log(eventType))
 
@@ -194,10 +196,9 @@ const HomePage: FC = () => {
     }, [canvas])
 
     return (
-        <>
-            <h1 style={{ textAlign: "center", marginBottom: "1rem", marginTop: "1rem" }}>MarcuthCraft</h1>
+        <div className={styles["container"]}>
             <GameScreen size={screenSize} onReady={handleGameScreenReady}/>
-        </>
+        </div>
     )
 }
 

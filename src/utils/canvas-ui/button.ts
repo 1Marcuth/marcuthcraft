@@ -25,7 +25,6 @@ type DrawProps = {
 
 class CanvasButton {
     public props: CanvasButtonProps
-    public isMouseOver: boolean = false
 
     private isEventListenersAdded: boolean = false
 
@@ -57,14 +56,11 @@ class CanvasButton {
             offsetX >= x &&
             offsetX <= x + width &&
             offsetY >= y &&
-            offsetY <= y + height &&
-            !this.isMouseOver
+            offsetY <= y + height
         ) {
             ctx.canvas.style.cursor = "pointer"
-            this.isMouseOver = true
-        } else if (this.isMouseOver) {
+        } else {
             ctx.canvas.style.cursor = "auto"
-            this.isMouseOver = false
         }
     }
 
@@ -155,7 +151,7 @@ class CanvasButton {
             ctx.canvas.addEventListener("mouseup", this.handleMouseUp)
             ctx.canvas.addEventListener("click", this.handleClick)
             ctx.canvas.addEventListener("dblclick", this.handleDoubleClick)
-            ctx.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this))
+            //ctx.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this))
             this.isEventListenersAdded = true
         }
     }
@@ -168,7 +164,7 @@ class CanvasButton {
             ctx.canvas.removeEventListener("mouseup", this.handleMouseUp)
             ctx.canvas.removeEventListener("click", this.handleClick)
             ctx.canvas.removeEventListener("dblclick", this.handleDoubleClick)
-            ctx.canvas.removeEventListener("mousemove", this.handleMouseMove)
+            //ctx.canvas.removeEventListener("mousemove", this.handleMouseMove)
             this.isEventListenersAdded = false
         }
 
@@ -176,7 +172,7 @@ class CanvasButton {
         this.handleDoubleClick = this.handleDoubleClick.bind(this)
         this.handleMouseUp = this.handleMouseUp.bind(this)
         this.handleMouseDown = this.handleMouseDown.bind(this)
-        this.handleMouseMove = this.handleMouseMove.bind(this)
+        //this.handleMouseMove = this.handleMouseMove.bind(this)
     }
 }
 

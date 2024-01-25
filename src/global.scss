@@ -5,7 +5,12 @@
 @font-face {
     font-family: "Minecraft";
     src: url("./assets/fonts/minecraft.ttf");
- }
+}
+
+@font-face {
+    font-family: "Retron2000";
+    src: url("./assets/fonts/retron2000.ttf");
+}
 
 * {
     margin: 0;
@@ -15,8 +20,4 @@
 
 body {
     font-family: "Poppins", Arial, Helvetica, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
 }

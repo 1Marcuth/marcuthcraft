@@ -1,8 +1,7 @@
 type OnLoaded = (event: any) => any
 
 export type Resource = {
-    name: string
-    loadEventName: string
+    loadEventName?: string
     resourceObject: any
     onLoaded?: OnLoaded
     source: string
@@ -35,20 +34,22 @@ type ResourceLoaderPartialProps = Omit<ResourceLoaderProps, "elementsToDestroy" 
 type LoadResourceCallback = () => any
 
 export type PartialResource = {
-    name: string
+    source: string
     resourceObject: any
 }
 
 function loadResource(resource: Resource, loader: ResourceLoader, callback: LoadResourceCallback): void {
     resource.resourceObject.src = resource.source
 
-    const eventListener = (event: any) => {
+    function eventListener(event: any) {
         callback()
 
         if (resource.onLoaded) {
             resource.onLoaded(event)
         }
     }
+
+    if (!resource.loadEventName) resource.loadEventName = "load"
 
     resource.resourceObject.addEventListener(resource.loadEventName, eventListener)
     loader.addToDestroyList(resource.resourceObject, resource.loadEventName, eventListener)
@@ -80,7 +81,7 @@ class ResourceLoader {
                 if (this.props.loadedCount === this.props.resources.length) {
                     const partialResources: PartialResource[] = this.props.resources.map(resource => {
                         const partialResource = {
-                            name: resource.name,
+                            source: resource.source,
                             resourceObject: resource.resourceObject
                         }
 

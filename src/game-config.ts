@@ -31,6 +31,16 @@ export const defaultMoveSpeed = 60
 export const worldHeight = 128
 export const blockSize = { width: 60, height: 60 }
 export const maxCaveHeigh = 20
+export const splashMessages = [
+    "Feito em TypeScript!",
+    "Made in TypeScript",
+    "TypeScript is awesome!",
+    "Try Minecraft",
+    "GitHub: @1Marcuth",
+    "Insta: @marcuth.dev",
+    "By Marcuth"
+]
+export const splashMessageIntervalTime = 10000
 
 export const playerSize = {
     width: blockSize.width / 2,
