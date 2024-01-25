@@ -39,11 +39,11 @@ class PRNG {
             min = 0
         }
 
-        if (min === 0 || (max === undefined || max === 0 || max === 1)) {
-            return this.lcgRandom()
+        if (min === 0 || (!max || max === 0 || max === 1)) {
+            return value
         }
 
-        if (min === max) return this.lcgRandom() + min
+        if (min === max) return value + min
 
         if (min > max) {
             minOrMax = max
