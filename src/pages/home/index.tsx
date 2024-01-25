@@ -6,34 +6,44 @@ import Player, { getPlayerAction } from "../../game/player"
 import KeyboardListener from "../../keyboard-listener"
 import GameScreen from "../../components/game-screen"
 import { screenSize } from "../../game-config"
-import renderGame from "../../game/render"
+import GameRender, { ScreenType } from "../../game/render"
 import Game from "../../game"
 
+const mainMenuBackgroundLayerTwo = require("../../assets/img/main-menu-background-layers/2.png")
 const soundtrackSource = require("../../assets/aud/soundtrack.mp3")
 const steveSkinSource = require("../../assets/img/skins/steve.png")
 const logoIntroSource = require("../../assets/img/logo-intro.png")
-const spritesSource = require("../../assets/img/sprites.png")
+const textureSpritesSource = require("../../assets/img/sprites.png")
 const logoSource = require("../../assets/img/logo.png")
 
 ///import styles from "./style.module.scss"
 
 const HomePage: FC = () => {
-    const [ loadedResources, setLoadedResources ] = useState<Resource[]>([])
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
 
     function handleGameScreenReady(canvas: HTMLCanvasElement) {
         setCanvas(canvas)
     }
 
-    function handleKeyPressed(keyPressed: string, player: Player) {
-        const playerAction = getPlayerAction(keyPressed, player)
+    function handleKeyPressed(
+        keyPressed: string, 
+        player: Player,
+        currentScreen?: string
+    ) {
+        if (currentScreen === "world") {
+            const playerAction = getPlayerAction(keyPressed, player)
 
-        if (playerAction) {
-            playerAction()
+            if (playerAction) {
+                playerAction()
+            }
         }
     }
 
     useEffect(() => {
+        if (!canvas) return
+
+        const loadedResources: Resource[] = []
+
         async function playSoundtrack(soundtrack: HTMLAudioElement): Promise<any> {
             try {
                 soundtrack.loop = true
@@ -50,12 +60,19 @@ const HomePage: FC = () => {
         const game = new Game({ player: player })
 
         const keyboardListener = new KeyboardListener(document)
+
         const resourceLoader = new ResourceLoader({ resources: [
             {
-                name: spritesSource,
+                name: logoIntroSource,
                 loadEventName: "load",
                 resourceObject: new Image(),
-                source: spritesSource
+                source: logoIntroSource
+            },
+            {
+                name: textureSpritesSource,
+                loadEventName: "load",
+                resourceObject: new Image(),
+                source: textureSpritesSource
             },
             {
                 name: soundtrackSource,
@@ -70,46 +87,91 @@ const HomePage: FC = () => {
                 source: steveSkinSource
             },
             {
-                name: logoIntroSource,
-                loadEventName: "load",
-                resourceObject: new Image(),
-                source: logoIntroSource
-            },
-            {
                 name: logoSource,
                 loadEventName: "load",
                 resourceObject: new Image(),
                 source: logoSource
             },
+            {
+                name: mainMenuBackgroundLayerTwo,
+                loadEventName: "load",
+                resourceObject: new Image(),
+                source: mainMenuBackgroundLayerTwo
+            }
         ] })
+
+        const gameContext = {
+            getLoadedResources: () => loadedResources,
+            amountOfResources: resourceLoader.props.resources.length
+        }
+
+        const gameRender = new GameRender({
+            $canvas: canvas,
+            game: game,
+            gameContext: gameContext,
+            images: {},
+            requestAnimationFrame: requestAnimationFrame
+        })
+
+        gameRender.pause()
 
         resourceLoader.subscribe(async (event, ...args) => {
             if (event === "loadedResource") {
                 const resource: Resource = args[0]
 
-                setLoadedResources(prevLoadedResources => [...prevLoadedResources, resource])
+                loadedResources.push(resource)
 
                 if (resource.name === soundtrackSource) {
                     const soundtrack = resource.resourceObject
                     await playSoundtrack(soundtrack)
+                } else if (resource.name === logoIntroSource) {
+                    gameRender.setProps({
+                        currentScreen: "intro",
+                        images: {
+                            ...gameRender.props.images,
+                            logoIntro: resource.resourceObject as HTMLImageElement
+                        }
+                    })
+                } else if (resource.name === logoSource) {
+                    gameRender.setProps({
+                        images: {
+                            ...gameRender.props.images,
+                            logo: resource.resourceObject as HTMLImageElement
+                        }
+                    })
+                } else if (resource.name === textureSpritesSource) {
+                    gameRender.setProps({
+                        images: {
+                            ...gameRender.props.images,
+                            textureSprites: resource.resourceObject as HTMLImageElement
+                        }
+                    })
+                } else if (resource.name === mainMenuBackgroundLayerTwo) {
+                    gameRender.setProps({
+                        images: {
+                            ...gameRender.props.images,
+                            backgroundLayerTwo: resource.resourceObject as HTMLImageElement
+                        }
+                    })
                 }
 
             } else if (event === "loadedAllResources") {
-                const resources: PartialResource[] = args[0]
-                const resource = resources.find(resource => resource.name === spritesSource)
+                await wait(600)
 
-                if (!canvas || !resource) return
-
-                const sourceImage = resource.resourceObject
+                gameRender.setProps({ currentScreen: "mainMenu" })
 
                 player.subscribe((eventType) => console.log(eventType))
-                keyboardListener.subscribe((keyPressed) => handleKeyPressed(keyPressed, player))
 
-                renderGame(game, canvas, sourceImage, requestAnimationFrame)
+                keyboardListener.subscribe((keyPressed) => handleKeyPressed(
+                    keyPressed,
+                    player,
+                    gameRender.props.currentScreen
+                ))
             }
         })
 
         resourceLoader.load()
+        gameRender.run()
 
         return () => {
             keyboardListener.destroy()
@@ -121,20 +183,6 @@ const HomePage: FC = () => {
         <>
             <h1 style={{ textAlign: "center", marginBottom: "1rem", marginTop: "1rem" }}>MarcuthCraft</h1>
             <GameScreen size={screenSize} onReady={handleGameScreenReady}/>
-            <ul>
-                {loadedResources.map(loadedResource => {
-                    const maxLength = 30
-
-                    const slicedResourceName = (loadedResource.name.length > maxLength ?
-                        loadedResource.name.slice(0, maxLength) + "..." :
-                        loadedResource.name
-                    )
-
-                    return (
-                        <li key={Math.random()}><b>[Loaded Resource]:</b> {slicedResourceName}</li>
-                    )
-                })}
-            </ul>
         </>
     )
 }

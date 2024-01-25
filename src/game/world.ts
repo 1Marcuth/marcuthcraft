@@ -1,13 +1,15 @@
-import { chunkWidth, startChunkIndex, maxChunksToLeft, maxChunksToRight, maxCaveHeigh, worldHeight, blocks, dirtStart } from "./../game-config"
 import randomUUID from "../utils/id-generator"
+import Noise from "../utils/noise"
 import PRNG from "../utils/prng"
 import Entity from "./entity"
 import Player from "./player"
 import Chunk from "./chunk"
-import { generateNoiseForCaves } from "../utils/generate-noise"
 import Block from "./block"
-import Perlin from "../utils/perlin"
-import Noise from "../utils/noise"
+import {
+    chunkWidth, startChunkIndex,
+    maxChunksToLeft, maxChunksToRight,
+    worldHeight, blocks
+} from "./../game-config"
 
 type Chunks = {
     [key: number]: Chunk
@@ -27,8 +29,7 @@ export type Coordinates = {
 
 type WorldPartialProps = Omit<WorldProps, "chunks" | "entities" | "prng">
 
-const airBlock = blocks.find((block) => block.type === "WOOD")
-const diamondOreBlock = blocks.find((block) => block.type === "DIAMOND_ORE")
+const airBlock = blocks.find((block) => block.type === "AIR")
 class World {
     public id: string
     public props: WorldProps
@@ -46,10 +47,6 @@ class World {
 
         this.generateChunks()
         this.generateCaves()
-
-        //if (!diamondOreBlock) return
-
-        //this.setBlockAt(0, 0, new Block({ ...diamondOreBlock }))
     }
 
     private getChunkAndBlockIndices(globalBlockIndex: number): { chunkIndex: number, blockIndex: number } {
@@ -85,19 +82,18 @@ class World {
             seed: this.props.prng.seed,
             width: worldWidth,
             height: worldHeight,
-            threshold: 0.1, // Adjust the value of the threshold to control the amount of caves
+            threshold: .01
         })
     
         for (let chunkIndex = 0; chunkIndex < chunksAmount; chunkIndex++) {
             for (let blockIndex = 0; blockIndex < chunkWidth * worldHeight; blockIndex++) {
-                const x = chunkIndex * chunkWidth + Math.floor(blockIndex / worldHeight);
+                const x = chunkIndex * chunkWidth + Math.floor(blockIndex / worldHeight)
                 const y = blockIndex % worldHeight
 
                 const currentBlock = this.getBlockAt(chunkIndex, blockIndex)
+                const isVoidSpace = cavesMap[x][y] === 0
     
-                const isVoid = cavesMap[x][y] === 0
-    
-                if (isVoid && airBlock && currentBlock?.props.type !== "BEDROCK" && currentBlock?.props.type !== "AIR") {
+                if (isVoidSpace && airBlock && currentBlock?.props.type !== "BEDROCK" && currentBlock?.props.type !== "AIR" && currentBlock?.props.type !== "DIRTY" && currentBlock?.props.type !== "GRASS") {
                     const currentBlock = this.getBlockAt(chunkIndex, blockIndex);
                     const isEdgeBlock = x === 0 || x === worldWidth - 1 || y === 0 || y === worldHeight - 1
     
