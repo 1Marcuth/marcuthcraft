@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - main # ou a branch que deseja monitorar para deploys
+      - main
 
 jobs:
   build-and-deploy:
@@ -32,4 +32,4 @@ jobs:
         echo ".github" >> .gitignore
         git add .
         git commit -m "Deploy to GitHub Pages"
-        git push --force --quiet "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" main:gh-pages
+        git push --force --quiet "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:main
