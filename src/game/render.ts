@@ -5,6 +5,7 @@ import {
     visionScale
 } from "../game-config"
 import Game from "./index"
+import CanvasButton from '../utils/canvas-button';
 
 type RequestAnimationFrameFunction = typeof requestAnimationFrame
 
@@ -49,6 +50,8 @@ export type GameRenderNewProps = {
 }
 
 type CanvasContext = CanvasRenderingContext2D & { [key: string]: string }
+type CanvasWidget = CanvasButton
+
 class GameRender {
     public props: GameRenderProps
     public isRunning: boolean = true
@@ -103,6 +106,8 @@ class GameRender {
         requestAnimationFrame
     }: GameRenderProps) {
         const ctx = $canvas.getContext("2d") as CanvasContext
+        
+        const canvasWidgets: CanvasWidget[] = []
 
         if (Date.now() % 5 === 0) this.backgroundLayerTwoOffsetX += 1.2
 
@@ -325,7 +330,7 @@ class GameRender {
                 
                 const image = images.backgroundLayerTwo
 
-                let x = (($canvas.width - image.width) / 2) + backgroundLayerTwoOffsetX
+                let x = Math.round((($canvas.width - image.width) / 2) + backgroundLayerTwoOffsetX)
                 const y = ($canvas.height - image.height) / 2
 
                 x -= Math.floor(backgroundLayerTwoOffsetX / image.width) * image.width
@@ -363,7 +368,18 @@ class GameRender {
         }
 
         function drawMainMenuButtons() {
+            const button = new CanvasButton({
+                ctx: ctx,
+                width: 20,
+                height: 20,
+                x: 20,
+                y: 20,
+                onClick: () => { console.log("Clicked!") }
+            })
 
+            button.draw({ color: "#000" })
+
+            canvasWidgets.push(button)
         }
     
         clearScreen()
@@ -392,6 +408,10 @@ class GameRender {
 
         if (this.isRunning) {
             return requestAnimationFrame(() => {
+                for (const widget of canvasWidgets) {
+                    widget.destroy(ctx)
+                }
+
                 game.update()
                 this.calculateFps(Date.now())
                 this.render(this.props)

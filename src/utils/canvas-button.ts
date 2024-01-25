@@ -1,4 +1,5 @@
 export type CanvasButtonProps = {
+    ctx: CanvasRenderingContext2D
     x: number
     y: number
     width: number
@@ -17,11 +18,6 @@ type ImageClipping = {
 }
 
 type DrawProps = {
-    ctx: CanvasRenderingContext2D
-    x: number,
-    y: number,
-    width?: number
-    height?: number 
     image?: HTMLImageElement
     imageClipping?: ImageClipping
     color?: string
@@ -33,6 +29,11 @@ class CanvasButton {
 
     public constructor(props: CanvasButtonProps) {
         this.props = props
+
+        this.handleClick = this.handleClick.bind(this)
+        this.handleDoubleClick = this.handleDoubleClick.bind(this)
+        this.handleMouseUp = this.handleMouseUp.bind(this)
+        this.handleMouseDown = this.handleMouseDown.bind(this)
     }
 
     private isPointInsideButton(pointX: number, pointY: number, buttonX: number, buttonY: number, buttonWidth: number, buttonHeight: number) {
@@ -44,10 +45,28 @@ class CanvasButton {
         )
     }
 
+    private handleMouseMove(event: MouseEvent) {
+        const { offsetX, offsetY } = event
+        const { x, y, width, height } = this.props
+
+        const ctx = this.props.ctx
+        
+        if (
+            offsetX >= x &&
+            offsetX <= x + width &&
+            offsetY >= y &&
+            offsetY <= y + height
+        ) {
+            ctx.canvas.style.cursor = "pointer"
+        } else {
+            ctx.canvas.style.cursor = "auto"
+        }
+    }
+
     private handleClick(event: MouseEvent) {
         const { offsetX, offsetY } = event
         const { x, y, width, height } = this.props
-        
+
         if (this.isPointInsideButton(offsetX, offsetY, x, y, width, height) && this.props.onClick) {
             this.props.onClick()
         }
@@ -81,51 +100,42 @@ class CanvasButton {
     }
 
     public draw({
-        ctx,
-        x,
-        y,
-        width,
-        height,
         image,
         imageClipping,
         color
     }: DrawProps) {
-        if (!width || !height) {
-            if (!image) return
-            width = image.width
-            height = image.height
-        } else if (!color) return
+        if (!image && !color) return
 
         if (color) {
-            ctx.fillStyle = color
+            this.props.ctx.fillStyle = color
 
-            ctx.fillRect(
-                x,
-                y,
-                width,
-                height
+            this.props.ctx.fillRect(
+                this.props.x,
+                this.props.y,
+                this.props.width,
+                this.props.height
             )
 
         } else if (image) {
             if (imageClipping) {
-                ctx.drawImage(
+                this.props.ctx.drawImage(
                     image,
                     imageClipping.x,
                     imageClipping.y,
                     imageClipping.width,
                     imageClipping.height,
-                    x,
-                    y,
-                    width,
-                    height
+                    this.props.x,
+                    this.props.y,
+                    this.props.width,
+                    this.props.height
                 )
             } else {
-                ctx.drawImage(
+                this.props.ctx.drawImage(
                     image,
-                    x,
-                    y,
-                    width,
-                    height
+                    this.props.x,
+                    this.props.y,
+                    this.props.width,
+                    this.props.height
                 )
             }
 
@@ -134,10 +144,11 @@ class CanvasButton {
         }
 
         if (!this.isEventListenersAdded) {
-            ctx.canvas.addEventListener("mousedown", this.handleMouseDown)
-            ctx.canvas.addEventListener("mouseup", this.handleMouseUp)
-            ctx.canvas.addEventListener("click", this.handleClick)
-            ctx.canvas.addEventListener("dblclick", this.handleDoubleClick)
+            this.props.ctx.canvas.addEventListener("mousedown", this.handleMouseDown)
+            this.props.ctx.canvas.addEventListener("mouseup", this.handleMouseUp)
+            this.props.ctx.canvas.addEventListener("click", this.handleClick)
+            this.props.ctx.canvas.addEventListener("dblclick", this.handleDoubleClick)
+            this.props.ctx.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this))
             this.isEventListenersAdded = true
         }
     }
@@ -148,8 +159,15 @@ class CanvasButton {
             ctx.canvas.removeEventListener("mouseup", this.handleMouseUp)
             ctx.canvas.removeEventListener("click", this.handleClick)
             ctx.canvas.removeEventListener("dblclick", this.handleDoubleClick)
+            ctx.canvas.removeEventListener("mousemove", this.handleMouseMove)
             this.isEventListenersAdded = false
         }
+
+        this.handleClick = this.handleClick.bind(this)
+        this.handleDoubleClick = this.handleDoubleClick.bind(this)
+        this.handleMouseUp = this.handleMouseUp.bind(this)
+        this.handleMouseDown = this.handleMouseDown.bind(this)
+        this.handleMouseMove = this.handleMouseMove.bind(this)
     }
 }
 

@@ -1,6 +1,6 @@
 export const screenSize = {
-    width: 1200,
-    height: 600
+    width: 1280,
+    height: 720
 }
 
 export const visionScale = .25
