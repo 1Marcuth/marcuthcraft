@@ -24,6 +24,7 @@ type Images = {
     logoIntro?: HTMLImageElement
     logo?: HTMLImageElement
     backgroundLayerTwo?: HTMLImageElement
+    widgets?: HTMLImageElement
 }
 
 type GameContext = {
@@ -109,7 +110,7 @@ class GameRender {
         
         const canvasWidgets: CanvasWidget[] = []
 
-        if (Date.now() % 5 === 0) this.backgroundLayerTwoOffsetX += 1.2
+        if (Date.now() % 5 === 0) this.backgroundLayerTwoOffsetX += 2
 
         const backgroundLayerTwoOffsetX = this.backgroundLayerTwoOffsetX
     
@@ -368,18 +369,226 @@ class GameRender {
         }
 
         function drawMainMenuButtons() {
-            const button = new CanvasButton({
-                ctx: ctx,
-                width: 20,
-                height: 20,
-                x: 20,
-                y: 20,
-                onClick: () => { console.log("Clicked!") }
-            })
+            function drawSinglePlayerButton() {
+                const buttonWidth = 400
+                const buttonHeight = Math.round(buttonWidth / 10)
+                const buttonX = ($canvas.width - buttonWidth) / 2
+                const buttonY = 400
 
-            button.draw({ color: "#000" })
+                function drawButton() {
+                    const button = new CanvasButton({
+                        ctx: ctx,
+                        width: buttonWidth,
+                        height: buttonHeight,
+                        x: buttonX,
+                        y: buttonY,
+                        onClick: () => { console.log("Clicked!") }
+                    })
 
-            canvasWidgets.push(button)
+                    if (button.isMouseOver) {
+                        button.draw({
+                            image: images.widgets,
+                            imageClipping: {
+                                x: 0,
+                                y: 30,
+                                height: 15,
+                                width: 150
+                            }
+                        })
+                    } else {
+                        button.draw({
+                            image: images.widgets,
+                            imageClipping: {
+                                x: 0,
+                                y: 15,
+                                height: 15,
+                                width: 150
+                            }
+                        })
+                    }
+                    
+                    canvasWidgets.push(button)
+                }
+
+                function drawTextButton() {
+                    const textX = $canvas.width / 2
+                    const textY = buttonY + (buttonHeight / 2) + 5
+
+                    const text = "Singleplayer"
+
+                    ctx.font = `${buttonHeight / 2}px Minecraft`
+                    ctx.letterSpacing = "2px"
+                    ctx.textAlign = "center"
+
+                    ctx.fillStyle = "#000"
+
+                    ctx.fillText(
+                        text,
+                        textX + 2,
+                        textY + 2
+                    )
+
+                    ctx.fillStyle = "#F4F2F4"
+
+                    ctx.fillText(
+                        text,
+                        textX,
+                        textY
+                    )
+                }
+
+                drawButton()
+                drawTextButton()
+            }
+
+            function drawCreditsButton() {
+                const buttonWidth = 400
+                const buttonHeight = Math.round(buttonWidth / 10)
+                const buttonX = ($canvas.width - buttonWidth) / 2
+                const buttonY = 450
+
+                function drawButton() {
+                    const button = new CanvasButton({
+                        ctx: ctx,
+                        width: buttonWidth,
+                        height: buttonHeight,
+                        x: buttonX,
+                        y: buttonY,
+                        onClick: () => { console.log("Clicked!") }
+                    })
+
+                    if (button.isMouseOver) {
+                        button.draw({
+                            image: images.widgets,
+                            imageClipping: {
+                                x: 0,
+                                y: 30,
+                                height: 15,
+                                width: 150
+                            }
+                        })
+                    } else {
+                        button.draw({
+                            image: images.widgets,
+                            imageClipping: {
+                                x: 0,
+                                y: 15,
+                                height: 15,
+                                width: 150
+                            }
+                        })
+                    }
+                    
+                    canvasWidgets.push(button)
+                }
+
+                function drawTextButton() {
+                    const textX = $canvas.width / 2
+                    const textY = buttonY + (buttonHeight / 2) + 5
+
+                    const text = "Credits"
+
+                    ctx.font = `${buttonHeight / 2}px Minecraft`
+                    ctx.letterSpacing = "2px"
+                    ctx.textAlign = "center"
+
+                    ctx.fillStyle = "#000"
+
+                    ctx.fillText(
+                        text,
+                        textX + 2,
+                        textY + 2
+                    )
+
+                    ctx.fillStyle = "#F4F2F4"
+
+                    ctx.fillText(
+                        text,
+                        textX,
+                        textY
+                    )
+                }
+
+                drawButton()
+                drawTextButton()
+            }
+
+            function drawOptionsButton() {
+                const buttonWidth = 400
+                const buttonHeight = Math.round(buttonWidth / 10)
+                const buttonX = ($canvas.width - buttonWidth) / 2
+                const buttonY = 525
+
+                function drawButton() {
+                    const button = new CanvasButton({
+                        ctx: ctx,
+                        width: buttonWidth,
+                        height: buttonHeight,
+                        x: buttonX,
+                        y: buttonY,
+                        onClick: () => { console.log("Clicked!") }
+                    })
+
+                    if (button.isMouseOver) {
+                        button.draw({
+                            image: images.widgets,
+                            imageClipping: {
+                                x: 0,
+                                y: 30,
+                                height: 15,
+                                width: 150
+                            }
+                        })
+                    } else {
+                        button.draw({
+                            image: images.widgets,
+                            imageClipping: {
+                                x: 0,
+                                y: 15,
+                                height: 15,
+                                width: 150
+                            }
+                        })
+                    }
+                    
+                    canvasWidgets.push(button)
+                }
+
+                function drawTextButton() {
+                    const textX = $canvas.width / 2
+                    const textY = buttonY + (buttonHeight / 2) + 5
+
+                    const text = "Options..."
+
+                    ctx.font = `${buttonHeight / 2}px Minecraft`
+                    ctx.letterSpacing = "2px"
+                    ctx.textAlign = "center"
+
+                    ctx.fillStyle = "#000"
+
+                    ctx.fillText(
+                        text,
+                        textX + 2,
+                        textY + 2
+                    )
+
+                    ctx.fillStyle = "#F4F2F4"
+
+                    ctx.fillText(
+                        text,
+                        textX,
+                        textY
+                    )
+                }
+
+                drawButton()
+                drawTextButton()
+            }
+
+            
+            drawSinglePlayerButton()
+            drawCreditsButton()
+            drawOptionsButton()
         }
     
         clearScreen()
@@ -409,7 +618,7 @@ class GameRender {
         if (this.isRunning) {
             return requestAnimationFrame(() => {
                 for (const widget of canvasWidgets) {
-                    widget.destroy(ctx)
+                    widget.destroy()
                 }
 
                 game.update()

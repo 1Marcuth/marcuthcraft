@@ -14,6 +14,7 @@ const soundtrackSource = require("../../assets/aud/soundtrack.mp3")
 const steveSkinSource = require("../../assets/img/skins/steve.png")
 const logoIntroSource = require("../../assets/img/logo-intro.png")
 const textureSpritesSource = require("../../assets/img/sprites.png")
+const widgetsSource = require("../../assets/img/widgets.png")
 const logoSource = require("../../assets/img/logo.png")
 
 ///import styles from "./style.module.scss"
@@ -97,6 +98,12 @@ const HomePage: FC = () => {
                 loadEventName: "load",
                 resourceObject: new Image(),
                 source: mainMenuBackgroundLayerTwo
+            },
+            {
+                name: widgetsSource,
+                loadEventName: "load",
+                resourceObject: new Image(),
+                source: widgetsSource
             }
         ] })
 
@@ -151,6 +158,13 @@ const HomePage: FC = () => {
                         images: {
                             ...gameRender.props.images,
                             backgroundLayerTwo: resource.resourceObject as HTMLImageElement
+                        }
+                    })
+                } else if (resource.name === widgetsSource) {
+                    gameRender.setProps({
+                        images: {
+                            ...gameRender.props.images,
+                            widgets: resource.resourceObject as HTMLImageElement
                         }
                     })
                 }

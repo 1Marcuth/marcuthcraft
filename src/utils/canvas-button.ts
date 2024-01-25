@@ -25,6 +25,8 @@ type DrawProps = {
 
 class CanvasButton {
     public props: CanvasButtonProps
+    public isMouseOver: boolean = false
+
     private isEventListenersAdded: boolean = false
 
     public constructor(props: CanvasButtonProps) {
@@ -50,16 +52,19 @@ class CanvasButton {
         const { x, y, width, height } = this.props
 
         const ctx = this.props.ctx
-        
+
         if (
             offsetX >= x &&
             offsetX <= x + width &&
             offsetY >= y &&
-            offsetY <= y + height
+            offsetY <= y + height &&
+            !this.isMouseOver
         ) {
             ctx.canvas.style.cursor = "pointer"
-        } else {
+            this.isMouseOver = true
+        } else if (this.isMouseOver) {
             ctx.canvas.style.cursor = "auto"
+            this.isMouseOver = false
         }
     }
 
@@ -103,13 +108,15 @@ class CanvasButton {
         image,
         imageClipping,
         color
-    }: DrawProps) {
+    }: DrawProps) {        
         if (!image && !color) return
 
-        if (color) {
-            this.props.ctx.fillStyle = color
+        const { ctx } = this.props
 
-            this.props.ctx.fillRect(
+        if (color) {
+            ctx.fillStyle = color
+
+            ctx.fillRect(
                 this.props.x,
                 this.props.y,
                 this.props.width,
@@ -118,7 +125,7 @@ class CanvasButton {
 
         } else if (image) {
             if (imageClipping) {
-                this.props.ctx.drawImage(
+                ctx.drawImage(
                     image,
                     imageClipping.x,
                     imageClipping.y,
@@ -130,7 +137,7 @@ class CanvasButton {
                     this.props.height
                 )
             } else {
-                this.props.ctx.drawImage(
+                ctx.drawImage(
                     image,
                     this.props.x,
                     this.props.y,
@@ -144,16 +151,18 @@ class CanvasButton {
         }
 
         if (!this.isEventListenersAdded) {
-            this.props.ctx.canvas.addEventListener("mousedown", this.handleMouseDown)
-            this.props.ctx.canvas.addEventListener("mouseup", this.handleMouseUp)
-            this.props.ctx.canvas.addEventListener("click", this.handleClick)
-            this.props.ctx.canvas.addEventListener("dblclick", this.handleDoubleClick)
-            this.props.ctx.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this))
+            ctx.canvas.addEventListener("mousedown", this.handleMouseDown)
+            ctx.canvas.addEventListener("mouseup", this.handleMouseUp)
+            ctx.canvas.addEventListener("click", this.handleClick)
+            ctx.canvas.addEventListener("dblclick", this.handleDoubleClick)
+            ctx.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this))
             this.isEventListenersAdded = true
         }
     }
 
-    public destroy(ctx: CanvasRenderingContext2D) {
+    public destroy() {
+        const { ctx } = this.props
+
         if (this.isEventListenersAdded) {
             ctx.canvas.removeEventListener("mousedown", this.handleMouseDown)
             ctx.canvas.removeEventListener("mouseup", this.handleMouseUp)
