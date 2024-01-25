@@ -1,5 +1,5 @@
-function wait(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms))
+function wait(time: number) {
+    return new Promise(resolve => setTimeout(resolve, time))
 }
 
 export default wait
