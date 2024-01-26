@@ -1,15 +1,10 @@
 import randomUUID from "../utils/id-generator"
-import Noise from "../utils/noise"
+import WorldGenerator from "./world-generator"
 import PRNG from "../utils/prng"
-import Entity from "./entity"
 import Player from "./player"
+import Entity from "./entity"
 import Chunk from "./chunk"
 import Block from "./block"
-import {
-    chunkWidth, startChunkIndex,
-    maxChunksToLeft, maxChunksToRight,
-    worldHeight, blocks
-} from "./../game-config"
 
 type Chunks = {
     [key: number]: Chunk
@@ -29,7 +24,6 @@ export type Coordinates = {
 
 type WorldPartialProps = Omit<WorldProps, "chunks" | "entities" | "prng">
 
-const airBlock = blocks.find((block) => block.type === "AIR")
 class World {
     public id: string
     public props: WorldProps
@@ -45,66 +39,23 @@ class World {
             prng: new PRNG(props.seed)
         }
 
-        this.generateChunks()
-        this.generateCaves()
+        this.generate()
     }
 
-    private getChunkAndBlockIndices(globalBlockIndex: number): { chunkIndex: number, blockIndex: number } {
-        const chunkIndex = Math.floor(globalBlockIndex / (chunkWidth * worldHeight))
-        const blockIndex = Math.floor(globalBlockIndex % (chunkWidth * worldHeight))
-        return { chunkIndex, blockIndex }
-    }
-
-    private generateChunks(): void {
-        const firstChunkIndex = 0
-        const lastChunkIndex = startChunkIndex + maxChunksToRight
-
-        for (let i = startChunkIndex - maxChunksToLeft; i <= startChunkIndex + maxChunksToRight; i++) {
-            if (!this.props.chunks[i]) {
-                this.props.chunks[i] = new Chunk({
-                    index: i,
-                    prng: this.props.prng,
-                    width: chunkWidth, 
-                    borders: {
-                        left: i === firstChunkIndex,
-                        right: i === lastChunkIndex
-                    }
-                })
-            }
+    public generate() {
+        const generator = new WorldGenerator(this.props.prng.seed)
+        const chunks = generator.generateChunks()
+        
+        for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+            const chunk = chunks[chunkIndex]
+            this.props.chunks[chunkIndex] = chunk
         }
+
+        console.log(chunks)
     }
 
-    private generateCaves(): void {
-        const chunksAmount = Object.keys(this.props.chunks).length;
-        const worldWidth = chunkWidth * chunksAmount;
-    
-        const cavesMap = Noise.generateCavesMap({
-            seed: this.props.prng.seed,
-            width: worldWidth,
-            height: worldHeight,
-            threshold: .01
-        })
-    
-        for (let chunkIndex = 0; chunkIndex < chunksAmount; chunkIndex++) {
-            for (let blockIndex = 0; blockIndex < chunkWidth * worldHeight; blockIndex++) {
-                const x = chunkIndex * chunkWidth + Math.floor(blockIndex / worldHeight)
-                const y = blockIndex % worldHeight
+    public load() {
 
-                const currentBlock = this.getBlockAt(chunkIndex, blockIndex)
-                const isVoidSpace = cavesMap[x][y] === 0
-    
-                if (isVoidSpace && airBlock && currentBlock?.props.type !== "BEDROCK" && currentBlock?.props.type !== "AIR" && currentBlock?.props.type !== "DIRTY" && currentBlock?.props.type !== "GRASS") {
-                    const currentBlock = this.getBlockAt(chunkIndex, blockIndex);
-                    const isEdgeBlock = x === 0 || x === worldWidth - 1 || y === 0 || y === worldHeight - 1
-    
-                    const transitionThreshold = isEdgeBlock ? 0.1 : 0.5
-    
-                    if (!currentBlock || this.props.prng.next() < transitionThreshold) {
-                        this.setBlockAt(chunkIndex, blockIndex, new Block({ ...airBlock }))
-                    }
-                }
-            }
-        }
     }
 
     private getBlockAt(chunkIndex: number, blockIndex: number): Block | undefined {
@@ -125,10 +76,6 @@ class World {
     }
 
     public addPlayer(player: Player, coordinates: Coordinates) {
-
-    }
-
-    public addEntity(entity: Entity, coordinates: Coordinates) {
 
     }
 }

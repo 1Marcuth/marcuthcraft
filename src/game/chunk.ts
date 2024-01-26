@@ -1,101 +1,247 @@
-import {
-    bedrockEnd, blocks, coalEnd, coalGenerationChance,
-    coalStart, diamondEnd, diamondGenerationChance,
-    diamondStart, dirtEnd, dirtStart, goldEnd,
-    goldGenerationChance, goldStart, ironEnd,
-    ironGenerationChance, ironStart, worldHeight
-} from "./../game-config"
-import Noise from "../utils/noise"
+import { BlockTypes, biomeGenerationSettings } from "./settings"
+import Block, { BlockPartialProps } from "./block"
+import { worldHeight } from "./../game-config"
 import PRNG from "../utils/prng"
-import Block from "./block"
 
+function getBlockByType(blockType: string): BlockPartialProps {
+    const blocksProps: BlockPartialProps[] = [
+        {
+            name: "Bloco de Terra",
+            type: BlockTypes.DIRT,
+            isSolid: true,
+            resistance: 500,
+            clipping: {
+                x: 0,
+                y: 0,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Bloco de Grama",
+            type: BlockTypes.GRASS,
+            isSolid: true,
+            resistance: 500,
+            clipping: {
+                x: 16,
+                y: 0,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Pedra",
+            type: BlockTypes.STONE,
+            isSolid: true,
+            resistance: 1500,
+            clipping: {
+                x: 32,
+                y: 0,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Minério de Carvão",
+            type: BlockTypes.COAL_ORE,
+            isSolid: true,
+            resistance: 3000,
+            clipping: {
+                x: 32,
+                y: 16,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Minério de Ferro",
+            type: BlockTypes.IRON_ORE,
+            isSolid: true,
+            resistance: 3000,
+            clipping: {
+                x: 48,
+                y: 16,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Minério de Ouro",
+            type: BlockTypes.GOLD_ORE,
+            isSolid: true,
+            resistance: 3000,
+            clipping: {
+                x: 32,
+                y: 32,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Minério de Diamante",
+            type: BlockTypes.DIAMOND_ORE,
+            isSolid: true,
+            resistance: 3000,
+            clipping: {
+                x: 48,
+                y: 32,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Rocha-mãe",
+            type: BlockTypes.BEDROCK,
+            isSolid: true,
+            resistance: "infinite",
+            clipping: {
+                x: 48,
+                y: 0,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Tronco de Carvalho",
+            type: BlockTypes.OAK_TRUNK,
+            isSolid: true,
+            clipping: {
+                x: 64,
+                y: 0,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Folha de Carvalho",
+            type: BlockTypes.OAK_LEAF,
+            isSolid: true,
+            clipping: {
+                x: 64,
+                y: 16,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Água",
+            type: BlockTypes.WATER,
+            isSolid: false,
+            isLiquid: true,
+            clipping: {
+                x: 0,
+                y: 16,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Lava",
+            type: BlockTypes.LAVA,
+            isSolid: false,
+            isLiquid: true,
+            clipping: {
+                x: 16,
+                y: 16,
+                width: 16,
+                height: 16
+            }
+        },
+        {
+            name: "Ar",
+            type: BlockTypes.AIR,
+            isSolid: false
+        }
+    ]
 
-const bedrockIndex = blocks.findIndex((block) => block.type === "BEDROCK")
-const stoneIndex = blocks.findIndex((block) => block.type === "STONE")
-const airIndex = blocks.findIndex((block) => block.type === "AIR") 
-const dirtyIndex = blocks.findIndex((block) => block.type === "DIRTY")
-const grassIndex = blocks.findIndex((block) => block.type === "GRASS")
-// const woodIndex = blocks.findIndex((block) => block.type === "WOOD")
-const coalOreIndex = blocks.findIndex((block) => block.type === "COAL_ORE")
-const ironOreIndex = blocks.findIndex((block) => block.type === "IRON_ORE")
-const goldOreIndex = blocks.findIndex((block) => block.type === "GOLD_ORE")
-const diamondOreIndex = blocks.findIndex((block) => block.type === "DIAMOND_ORE")
+    const blockProps = blocksProps.find(block => block.type === blockType)
 
-function selectBlock(index: number, chunk: Chunk, prng: PRNG, noiseHeight: number): number {
+    if (!blockProps) {
+        throw new Error(`Not found block of type '${blockType}'`)
+    }
+
+    return blockProps
+}
+
+type SelectBlockProps = {
+    index: number
+    chunk: Chunk
+    prng: PRNG
+    biomeType: string
+    noiseHeight: number
+}
+
+function selectBlockType({
+    index,
+    chunk,
+    prng,
+    biomeType,
+    noiseHeight
+}: SelectBlockProps): string {
     const y = Math.floor(index / chunk.props.width)
-
-    const currentDirtStart = dirtStart + Math.round(noiseHeight * 10.5)
-    const currentDirtEnd = dirtEnd + Math.round(noiseHeight * 10.5)
 
     const lowerBlockIndex = index - chunk.props.width
     const lowerBlock = chunk.props.data[lowerBlockIndex]
 
     if (chunk.props.borders.left && (index + 1) % chunk.props.width === 0) {
-        return bedrockIndex
+        return BlockTypes.BEDROCK
     } else if(chunk.props.borders.right && index % chunk.props.width === 0) {
-        return bedrockIndex
+        return BlockTypes.BEDROCK
     }
 
-    if (y <= bedrockEnd) {
-        if (y === bedrockEnd) {
-            return prng.next() < 0.5 ? stoneIndex : bedrockIndex
-        } else if (y === bedrockEnd - 1) {
-            return prng.next() < 0.3 ? stoneIndex : bedrockIndex
-        } else if (y === bedrockEnd - 2) {
-            return prng.next() < 0.1 ? stoneIndex : bedrockIndex
-        }
+    const biomeSettings = biomeGenerationSettings.find(biomeSettings => biomeSettings.type === biomeType)
 
-        return bedrockIndex
-    } else if (y >= currentDirtStart && y <= currentDirtEnd) {
-        if (lowerBlock.props.type === "GRASS" || lowerBlock.props.lowerBlockType === "GRASS") {
-            return airIndex
-        }
+    if (biomeSettings) {
+        for (const blockLayer of biomeSettings.blockLayers) {
+            if (y >= blockLayer.layerRange[0] && y <= blockLayer.layerRange[1]) {
+                if (blockLayer.spawnVariationLayers) {
+                    for (const variationLayer of blockLayer.spawnVariationLayers) {
+                        if (y >= variationLayer.layerRange[0] && y <= variationLayer.layerRange[1]) {
+                            if (prng.next() > variationLayer.spawnChance) {
+                                const randomBlockIndex = Math.floor(prng.next() * variationLayer.alternativeBlocks.length)
+                                const randomBlockType = variationLayer.alternativeBlocks[randomBlockIndex]
+                                return randomBlockType
+                            }
+                        }
+                    }
+                }
 
-        if (currentDirtEnd === y) {
-            return grassIndex
-        }
+                if (blockLayer.blockType === BlockTypes.DIRT && y === blockLayer.layerRange[1]) {
+                        return BlockTypes.GRASS
+                }
 
-        return dirtyIndex
-    } else if (y > bedrockEnd && y < currentDirtStart) {
-        if (y === currentDirtStart - 1) {
-            return prng.next() < .5 ? dirtyIndex : stoneIndex
-        } else if (y === currentDirtStart - 2) {
-            return prng.next() < .25 ? dirtyIndex : stoneIndex
+                return blockLayer.blockType
+            }
         }
-
-        const lowerBlockIndex = index - chunk.props.width
-        const lowerBlock = chunk.props.data[lowerBlockIndex]
-
-        if (y >= coalStart && y <= coalEnd && (prng.next() < coalGenerationChance || (lowerBlock.props.type === "COAL_ORE" && prng.next() < 0.15))) {
-            return coalOreIndex
-        }
-    
-        if (y >= ironStart && y <= ironEnd && (prng.next() < ironGenerationChance || (lowerBlock.props.type === "IRON_ORE" && prng.next() < 0.25))) {
-            return ironOreIndex
-        }
-    
-        if (y >= goldStart && y <= goldEnd && (prng.next() < goldGenerationChance || (lowerBlock.props.type === "GOLD_ORE" && prng.next() < 0.09))) {
-            return goldOreIndex
-        }
-    
-        if (y >= diamondStart && y <= diamondEnd && (prng.next() < diamondGenerationChance || (lowerBlock.props.type === "DIAMOND_ORE" && prng.next() < 0.5))) {
-            return diamondOreIndex
-        }
-
-        return stoneIndex
-    } else {
-        if (lowerBlock.props.type === "DIRT") {
-            return grassIndex
-        }
-
-        return airIndex
     }
+
+    return BlockTypes.AIR
 }
 
-function generateBlock(index: number, chunk: Chunk, prng: PRNG, noiseHeight: number): Block {
-    const selectedBlockIndex = selectBlock(index, chunk, prng, noiseHeight)
-    const selectedBlock = blocks[selectedBlockIndex]
+type GenerateBlockProps = {
+    index: number
+    chunk: Chunk
+    prng: PRNG
+    biomeType: string
+    noiseHeight: number
+}
 
+function generateBlock({
+    index,
+    chunk,
+    prng,
+    biomeType,
+    noiseHeight
+}: GenerateBlockProps): Block {
+    const selectedBlockType = selectBlockType({
+        index: index,
+        chunk: chunk,
+        prng: new PRNG(prng.seed + index),
+        biomeType: biomeType,
+        noiseHeight: noiseHeight
+    })
+
+    const selectedBlock = getBlockByType(selectedBlockType)
     const lowerBlockIndex = index - chunk.props.width
     const lowerBlock = chunk.props.data[lowerBlockIndex]
 
@@ -119,12 +265,14 @@ type Borders = {
 export type ChunkProps = {
     width: number,
     borders: Borders
+    biomeType: string
+    terrainHeightNoise: number[]
     data: Block[],
     prng: PRNG
     index: number
 }
 
-type ChunkPartialProps = Omit<ChunkProps, "data">
+export type ChunkPartialProps = Omit<ChunkProps, "data">
 
 class Chunk {
     public props: ChunkProps
@@ -139,21 +287,17 @@ class Chunk {
     }
 
     private generateData() {
-        const { width } = this.props
+        for (let blockIndex = 0; blockIndex < this.props.width * worldHeight; blockIndex++) {
+            const noiseIndex = blockIndex % this.props.width
 
-        const noiseHeightMap = Noise.generateHeightMap({
-            seed: this.props.prng.seed,
-            offset: (this.props.index + 1) * this.props.width,
-            width: this.props.width,
-            scale: 30,
-            octaves: 2,
-            persistence: .5,
-            lacunarity: 2
-        })
+            const block = generateBlock({
+                chunk: this,
+                index: blockIndex,
+                prng: this.props.prng,
+                biomeType: this.props.biomeType,
+                noiseHeight: this.props.terrainHeightNoise[noiseIndex]
+            })
 
-        for (let i = 0; i < width * worldHeight; i++) {
-            const noiseIndex = i % width
-            const block = generateBlock(i, this, this.props.prng, noiseHeightMap[noiseIndex])
             this.props.data.push(block)
         }
 

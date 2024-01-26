@@ -7,7 +7,7 @@ type Clipping = {
     height: number 
 }
 
-type Resistance = number | "infinite" | string
+type Resistance = number | "infinite"
 
 export type BlockProps = {
     name: string
@@ -25,7 +25,7 @@ export type BlockProps = {
     lowerBlockType?: string
 }
 
-type BlockPartialProps = Omit<BlockProps, "currentResistance" | "destroyed">
+export type BlockPartialProps = Omit<BlockProps, "currentResistance" | "destroyed">
 
 enum BlockEvents {
     destroyed,
