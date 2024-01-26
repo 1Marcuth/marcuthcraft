@@ -1,22 +1,23 @@
 {
   "files": {
-    "main.css": "/static/css/main.9ab151f6.css",
-    "main.js": "/static/js/main.b5ab15d9.js",
+    "main.css": "/static/css/main.3742b716.css",
+    "main.js": "/static/js/main.a7533886.js",
     "static/js/787.21523ce2.chunk.js": "/static/js/787.21523ce2.chunk.js",
     "static/media/soundtrack.mp3": "/static/media/soundtrack.e1785b26d4ebab94b0be.mp3",
     "static/media/2.png": "/static/media/2.e9f16796005d72e991af.png",
     "static/media/blur.png": "/static/media/blur.4d8d421e995db38921be.png",
     "static/media/sprites.png": "/static/media/sprites.2205c2c5a5146a8c70fc.png",
-    "static/media/logo.png": "/static/media/logo.65c6fea40aae7eb739ac.png",
-    "static/media/minecraft.ttf": "/static/media/minecraft.81f6c7f882fcc2dee106.ttf",
+    "static/media/logo.png": "/static/media/logo.cdd5539fa0707a240a00.png",
+    "static/media/retron2000.ttf": "/static/media/retron2000.86ad2867cb4949bf6863.ttf",
     "static/media/logo-intro.png": "/static/media/logo-intro.fea234e26cd734c0c1e9.png",
+    "static/media/minecraft-regular.otf": "/static/media/minecraft-regular.82ba08919dc2add9422f.otf",
     "index.html": "/index.html",
-    "main.9ab151f6.css.map": "/static/css/main.9ab151f6.css.map",
-    "main.b5ab15d9.js.map": "/static/js/main.b5ab15d9.js.map",
+    "main.3742b716.css.map": "/static/css/main.3742b716.css.map",
+    "main.a7533886.js.map": "/static/js/main.a7533886.js.map",
     "787.21523ce2.chunk.js.map": "/static/js/787.21523ce2.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.9ab151f6.css",
-    "static/js/main.b5ab15d9.js"
+    "static/css/main.3742b716.css",
+    "static/js/main.a7533886.js"
   ]
 }
