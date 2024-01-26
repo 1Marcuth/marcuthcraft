@@ -1,32 +1,42 @@
+import { worldGenerationStepsCount } from './world-generator';
 import Player from "./player"
 import World from "./world"
 
+type WorldGenerationProgress = {
+    totalStages: number
+    stagesCompleted: number
+    currentStageName: string
+}
+
 export type GameProps = {
     player: Player
-    world: World
+    world?: World
+    worldGenerationProgress: WorldGenerationProgress
 }
 
 type GamePartialProps = {
     player: Player
     world?: World
+    worldGenerationProgress: WorldGenerationProgress
 }
+
+type Observer = (sender: string, eventType: string, ...args: any[]) => any
 
 class Game {
     public props: GameProps
 
+    private observers: Observer[] = []
+
     public constructor(props: GamePartialProps) {
-        const world = props.world ?? this.createWorld(props.player)
-        
-        this.props = {
-            ...props,
-            world: world
-        }
+        this.props = props
     }
 
-    private createWorld(player: Player): World {
+    public createWorld(player: Player): void {
         const world = new World({ seed: 1 })
+        world.subscribe((sender, event, ...args) => this.notifyAll(sender, event, ...args))
+        world.generate()
         world.addPlayer(player, { x: 0, y: 0 })
-        return world
+        this.props.world = world
     }
 
     public update() {
@@ -38,6 +48,16 @@ class Game {
         // if (this.props.world) {
         //     this.props.world.update()
         // }
+    }
+
+    public subscribe(observer: Observer): void {
+        this.observers.push(observer)
+    }
+
+    private notifyAll(sender: string, eventType: string, ...args: any[]): void {
+        for (const observer of this.observers) {
+            observer(sender, eventType, ...args)
+        }
     }
 }
 

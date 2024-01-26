@@ -14,22 +14,23 @@ enum Screens {
     intro,
     worldMenu,
     mainMenu,
+    generatingWorld,
     loadingWorld,
     world
 }
 
 export type ScreenType = keyof typeof Screens
 
-type Images = {
-    textureSprites?: HTMLImageElement
-    logoIntro?: HTMLImageElement
-    logo?: HTMLImageElement
-    backgroundLayerTwo?: HTMLImageElement
-    widgets?: HTMLImageElement
-    backgroundBlur?: HTMLImageElement
+type Images = { [key: string]: HTMLImageElement }
+
+type WorldGenerationProgress = {
+    totalStages: number
+    stagesCompleted: number
+    currentStageName: string
 }
 
 type GameContext = {
+    getWorldGenerationProgress(): WorldGenerationProgress
     getLoadedResources: () => Resource[]
     splashMessageManager: SplashMessageManager
     amountOfResources: number
@@ -59,14 +60,17 @@ type GameRenderWidget = CanvasButton
 
 type GameRenderWidgets = { [key: string]: GameRenderWidget }
 
+type Observer = (eventType: string, ...args: any[]) => any
+
 class GameRender {
     public props: GameRenderProps
     public isRunning: boolean = true
-    private lastFrameTime: number = 0
-    private fps: number = 0
 
     private backgroundLayerTwoOffsetX: number = 0
     private widgets: GameRenderWidgets = {}
+    private observers: Observer[] = []
+    private lastFrameTime: number = 0
+    private fps: number = 0
 
     public constructor(props: GameRenderProps) {
         this.props = props
@@ -78,6 +82,10 @@ class GameRender {
 
     private addWidget(key: string, widget: GameRenderWidget) {
         this.widgets[key] = widget
+    }
+
+    private handleClickWidget(key: string) {
+        this.notifyAll("widgetClick", key)
     }
 
     private removeUnnecessaryWidgets() {
@@ -129,18 +137,9 @@ class GameRender {
         requestAnimationFrame
     }: GameRenderProps) {
         const ctx = $canvas.getContext("2d") as CanvasContext
-        
-        const addWidget = this.addWidget.bind(this)
-        const setProps = this.setProps.bind(this)
-        const widgets = this.widgets
+        const gameRender = this
 
         if (currentScreen === "mainMenu") this.backgroundLayerTwoOffsetX -= .5
-        const backgroundLayerTwoOffsetX = this.backgroundLayerTwoOffsetX
-    
-        const chunks = game.props.world.props.chunks
-        const camera = game.props.player.props.camera
-        const cameraX = camera.props.offset.x
-        const cameraY = camera.props.offset.y
     
         function clearScreen() {
             ctx.clearRect(0, 0, screenSize.width, screenSize.height)
@@ -175,6 +174,10 @@ class GameRender {
         }
     
         function drawChunks() {
+            const camera = game.props.player.props.camera
+            const cameraX = camera.props.offset.x
+            const cameraY = camera.props.offset.y
+            const chunks = game.props.world!.props.chunks
             const chunksAmount = Object.keys(chunks).length
             const currentChunkIndex = Math.floor(cameraX / (chunkWidth * blockSize.width * visionScale))
     
@@ -354,10 +357,10 @@ class GameRender {
                 
                 const image = images.backgroundLayerTwo
 
-                let x = Math.round((($canvas.width - image.width) / 2) + backgroundLayerTwoOffsetX)
+                let x = Math.round((($canvas.width - image.width) / 2) + gameRender.backgroundLayerTwoOffsetX)
                 const y = ($canvas.height - image.height) / 2
 
-                x -= Math.floor(backgroundLayerTwoOffsetX / image.width) * image.width
+                x -= Math.floor(gameRender.backgroundLayerTwoOffsetX / image.width) * image.width
 
                 ctx.drawImage(
                     image,
@@ -417,8 +420,8 @@ class GameRender {
                     const buttonKey = "mainMenu.singlePlayerButton"
                     let button: CanvasButton
 
-                    if (buttonKey in widgets) {
-                        button = widgets[buttonKey]
+                    if (buttonKey in gameRender.widgets) {
+                        button = gameRender.widgets[buttonKey]
                     } else {
                         button = new CanvasButton({
                             ctx: ctx,
@@ -426,10 +429,10 @@ class GameRender {
                             height: buttonHeight,
                             x: buttonX,
                             y: buttonY,
-                            onClick: () => { setProps({ currentScreen: "world" }) }
+                            onClick: () => gameRender.handleClickWidget(buttonKey)
                         })
 
-                        addWidget(buttonKey, button)
+                        gameRender.addWidget(buttonKey, button)
                     }
 
                     button.draw({
@@ -491,8 +494,8 @@ class GameRender {
                     const buttonKey = "mainMenu.CreditsButton"
                     let button: CanvasButton
 
-                    if (buttonKey in widgets) {
-                        button = widgets[buttonKey]
+                    if (buttonKey in gameRender.widgets) {
+                        button = gameRender.widgets[buttonKey]
                     } else {
                         button = new CanvasButton({
                             ctx: ctx,
@@ -500,10 +503,10 @@ class GameRender {
                             height: buttonHeight,
                             x: buttonX,
                             y: buttonY,
-                            onClick: () => { console.log("Clicked!") }
+                            onClick: () => gameRender.handleClickWidget(buttonKey)
                         })
 
-                        addWidget(buttonKey, button)
+                        gameRender.addWidget(buttonKey, button)
                     }
 
                     button.draw({
@@ -565,8 +568,8 @@ class GameRender {
                     const buttonKey = "mainMenu.OptionsButton"
                     let button: CanvasButton
 
-                    if (buttonKey in widgets) {
-                        button = widgets[buttonKey]
+                    if (buttonKey in gameRender.widgets) {
+                        button = gameRender.widgets[buttonKey]
                     } else {
                         button = new CanvasButton({
                             ctx: ctx,
@@ -574,10 +577,10 @@ class GameRender {
                             height: buttonHeight,
                             x: buttonX,
                             y: buttonY,
-                            onClick: () => { console.log("Clicked!") }
+                            onClick: () => gameRender.handleClickWidget(buttonKey)
                         })
 
-                        addWidget(buttonKey, button)
+                        gameRender.addWidget(buttonKey, button)
                     }
 
                     button.draw({
@@ -727,6 +730,113 @@ class GameRender {
                 y
             )
         }
+
+        function drawWorldGenerationBackground() {
+            const image = images.optionsBackground
+
+            const width = image.width * 4
+            const height = image.height * 4
+
+            const repetitionsX = Math.ceil($canvas.width / width)
+            const repetitionsY = Math.ceil($canvas.height / height)
+    
+            for (let i = 0; i < repetitionsX; i++) {
+                for (let j = 0; j < repetitionsY; j++) {
+                    ctx.drawImage(
+                        image,
+                        i * width,
+                        j * height,
+                        width,
+                        height
+                    )
+                }
+            }
+
+            ctx.fillStyle = "#000000a0"
+
+            ctx.fillRect(
+                0,
+                0,
+                $canvas.width,
+                $canvas.height
+            )
+        }
+
+        function drawWorldGenerationTitle() {
+            const text = "Gerando Mundo..."
+
+            const x = $canvas.width / 2
+            const y = ($canvas.height / 2) - 20
+
+            ctx.fillStyle = "#fff"
+            ctx.textAlign = "center"
+            ctx.font = "20px Minecraft"
+            
+            ctx.fillText(
+                text,
+                x,
+                y
+            )
+        }
+
+        function drawWorldGenerationStage() {
+            const worldGenerationProgress = gameContext.getWorldGenerationProgress()
+            const stageName = worldGenerationProgress.currentStageName
+            const text = `[${worldGenerationProgress.stagesCompleted}/${worldGenerationProgress.totalStages}] ${stageName}`
+
+            const x = $canvas.width / 2
+            const y = ($canvas.height / 2) + 20
+
+            ctx.fillStyle = "#fff"
+            ctx.textAlign = "center"
+            ctx.font = "12px Retron2000"
+            
+            ctx.fillText(
+                text,
+                x,
+                y
+            )
+        }
+
+        function drawWorldGenerationProgressBar() {
+            const worldGenerationProgress = gameContext.getWorldGenerationProgress()
+            
+            const progress = worldGenerationProgress.stagesCompleted / worldGenerationProgress.totalStages
+
+            const progressBarMaxWidth = 250
+            const progressBarHeight = 4
+
+            const x = ($canvas.width - progressBarMaxWidth) / 2
+            const y = ($canvas.height / 2) + progressBarHeight + 30
+
+            function drawProgressBarBackground() {
+                ctx.fillStyle = "#808080"
+
+                ctx.fillRect(
+                    x,
+                    y,
+                    progressBarMaxWidth,
+                    progressBarHeight
+                )
+            }
+
+            function drawProgressBar() {
+                const progressBarCurrentWidth = Math.round(progressBarMaxWidth * progress)
+
+                ctx.fillStyle = "#80FF81"
+
+                ctx.fillRect(
+                    x,
+                    y,
+                    progressBarCurrentWidth,
+                    progressBarHeight
+                )
+            }
+
+            drawProgressBarBackground()
+            drawProgressBar()
+        }
+
     
         clearScreen()
 
@@ -752,6 +862,13 @@ class GameRender {
                 drawGameVersion()
                 break
 
+            case "generatingWorld":
+                drawWorldGenerationBackground()
+                drawWorldGenerationTitle()
+                drawWorldGenerationStage()
+                drawWorldGenerationProgressBar()
+                break
+
             default:
                 drawDefaultBackground()
         }
@@ -765,6 +882,16 @@ class GameRender {
                 this.calculateFps(Date.now())
                 this.render(this.props)
             })
+        }
+    }
+
+    public subscribe(observer: Observer): void {
+        this.observers.push(observer)
+    }
+
+    private notifyAll(eventType: string, ...args: any[]): void {
+        for (const observer of this.observers) {
+            observer(eventType, ...args)
         }
     }
 }

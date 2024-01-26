@@ -1,6 +1,7 @@
 type OnLoaded = (event: any) => any
 
 export type Resource = {
+    key: string
     loadEventName?: string
     resourceObject: any
     onLoaded?: OnLoaded
@@ -36,6 +37,7 @@ type LoadResourceCallback = () => any
 export type PartialResource = {
     source: string
     resourceObject: any
+    key: string
 }
 
 function loadResource(resource: Resource, loader: ResourceLoader, callback: LoadResourceCallback): void {
@@ -82,7 +84,8 @@ class ResourceLoader {
                     const partialResources: PartialResource[] = this.props.resources.map(resource => {
                         const partialResource = {
                             source: resource.source,
-                            resourceObject: resource.resourceObject
+                            resourceObject: resource.resourceObject,
+                            key: resource.key
                         }
 
                         return partialResource

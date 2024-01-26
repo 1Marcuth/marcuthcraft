@@ -166,11 +166,12 @@ class CanvasButton {
         }
 
         if (!this.isEventListenersAdded) {
+            this.handleMouseMove = this.handleMouseMove.bind(this)
             ctx.canvas.addEventListener("mousedown", this.handleMouseDown)
             ctx.canvas.addEventListener("mouseup", this.handleMouseUp)
             ctx.canvas.addEventListener("click", this.handleClick)
             ctx.canvas.addEventListener("dblclick", this.handleDoubleClick)
-            ctx.canvas.addEventListener("mousemove", this.handleMouseMove.bind(this))
+            ctx.canvas.addEventListener("mousemove", this.handleMouseMove)
             this.isEventListenersAdded = true
         }
     }
@@ -184,14 +185,9 @@ class CanvasButton {
             ctx.canvas.removeEventListener("click", this.handleClick)
             ctx.canvas.removeEventListener("dblclick", this.handleDoubleClick)
             ctx.canvas.removeEventListener("mousemove", this.handleMouseMove)
+            ctx.canvas.style.cursor = "auto"
             this.isEventListenersAdded = false
         }
-
-        this.handleClick = this.handleClick.bind(this)
-        this.handleDoubleClick = this.handleDoubleClick.bind(this)
-        this.handleMouseUp = this.handleMouseUp.bind(this)
-        this.handleMouseDown = this.handleMouseDown.bind(this)
-        //this.handleMouseMove = this.handleMouseMove.bind(this)
     }
 }
 

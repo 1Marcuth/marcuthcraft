@@ -24,9 +24,13 @@ export type Coordinates = {
 
 type WorldPartialProps = Omit<WorldProps, "chunks" | "entities" | "prng">
 
+type Observer = (sender: string, eventType: string, ...args: any[]) => any
+
 class World {
     public id: string
     public props: WorldProps
+
+    private observers: Observer[] = []
 
     public constructor(props: WorldPartialProps) {
         if (!props.seed) props.seed = randomUUID()
@@ -38,20 +42,19 @@ class World {
             entities: [],
             prng: new PRNG(props.seed)
         }
-
-        this.generate()
     }
 
     public generate() {
         const generator = new WorldGenerator(this.props.prng.seed)
+
+        generator.subscribe((event, ...args) => this.notifyAll(WorldGenerator.name, event, ...args))
+
         const chunks = generator.generateChunks()
         
         for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
             const chunk = chunks[chunkIndex]
             this.props.chunks[chunkIndex] = chunk
         }
-
-        console.log(chunks)
     }
 
     public load() {
@@ -77,6 +80,16 @@ class World {
 
     public addPlayer(player: Player, coordinates: Coordinates) {
 
+    }
+
+    public subscribe(observer: Observer): void {
+        this.observers.push(observer)
+    }
+
+    private notifyAll(sender: string, eventType: string, ...args: any[]): void {
+        for (const observer of this.observers) {
+            observer(sender, eventType, ...args)
+        }
     }
 }
 

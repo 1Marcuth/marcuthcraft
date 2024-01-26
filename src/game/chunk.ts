@@ -1,6 +1,6 @@
 import { BlockTypes, biomeGenerationSettings } from "./settings"
 import Block, { BlockPartialProps } from "./block"
-import { worldHeight } from "./../game-config"
+import { worldSize } from "./../game-config"
 import PRNG from "../utils/prng"
 
 function getBlockByType(blockType: string): BlockPartialProps {
@@ -287,7 +287,7 @@ class Chunk {
     }
 
     private generateData() {
-        for (let blockIndex = 0; blockIndex < this.props.width * worldHeight; blockIndex++) {
+        for (let blockIndex = 0; blockIndex < this.props.width * worldSize.height; blockIndex++) {
             const noiseIndex = blockIndex % this.props.width
 
             const block = generateBlock({

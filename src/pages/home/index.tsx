@@ -1,25 +1,17 @@
 import { FC, useEffect, useState } from "react"
 
+import { screenSize, splashMessageIntervalTime, splashMessages } from "../../game-config"
 import ResourceLoader, { Resource } from "../../game/resource-loader"
+import SplashMessageManager from "../../game/splash-message-manager"
+import GameRender, { GameRenderNewProps } from "../../game/render"
 import { wait } from "@testing-library/user-event/dist/utils"
 import Player, { getPlayerAction } from "../../game/player"
 import KeyboardListener from "../../keyboard-listener"
 import GameScreen from "../../components/game-screen"
-import { screenSize, splashMessageIntervalTime, splashMessages } from "../../game-config"
-import GameRender from "../../game/render"
 import Game from "../../game"
 
 import styles from "./style.module.scss"
-import SplashMessageManager from "../../game/splash-message-manager"
-
-const mainMenuBackgroundLayerTwo = require("../../assets/img/main-menu-background-layers/2.png")
-const mainMenuBackgroundBlur = require("../../assets/img/main-menu-background-layers/blur.png")
-const soundtrackSource = require("../../assets/aud/soundtrack.mp3")
-const steveSkinSource = require("../../assets/img/skins/steve.png")
-const logoIntroSource = require("../../assets/img/logo-intro.png")
-const textureSpritesSource = require("../../assets/img/sprites.png")
-const widgetsSource = require("../../assets/img/widgets.png")
-const logoSource = require("../../assets/img/logo.png")
+import { worldGenerationStepsCount } from "../../game/world-generator"
 
 const HomePage: FC = () => {
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
@@ -47,6 +39,12 @@ const HomePage: FC = () => {
 
         const loadedResources: Resource[] = []
 
+        const worldGenerationProgress = {
+            totalStages: worldGenerationStepsCount,
+            currentStageName: "Não Iniciado",
+            stagesCompleted: 0
+        }
+
         async function playSoundtrack(soundtrack: HTMLAudioElement): Promise<any> {
             try {
                 soundtrack.loop = true
@@ -59,54 +57,73 @@ const HomePage: FC = () => {
         }
 
         const playerSkin = new Image()
+
         const player = new Player({ skin: playerSkin })
-        const game = new Game({ player: player })
 
         const keyboardListener = new KeyboardListener(document)
+
+        const game = new Game({
+            player: player,
+            worldGenerationProgress: worldGenerationProgress,
+        })
+
+        const resourceLoader = new ResourceLoader({ resources: [
+            {
+                resourceObject: new Image(),
+                source: require("../../assets/img/logo-intro.png"),
+                key: "logoIntro"
+            },
+            {
+                resourceObject: new Image(),
+                source: require("../../assets/img/sprites.png"),
+                key: "textureSprites"
+            },
+            {
+                loadEventName: "loadeddata",
+                resourceObject: new Audio(),
+                source: require("../../assets/aud/soundtrack.mp3"),
+                key: "music1"
+            },
+            {
+                resourceObject: playerSkin,
+                source: require("../../assets/img/skins/steve.png"),
+                key: "playerSkin"
+            },
+            {
+                resourceObject: new Image(),
+                source: require("../../assets/img/logo.png"),
+                key: "logo"
+            },
+            {
+                resourceObject: new Image(),
+                source: require("../../assets/img/main-menu-background-layers/2.png"),
+                key: "backgroundLayerTwo"
+            },
+            {
+                resourceObject: new Image(),
+                source: require("../../assets/img/widgets.png"),
+                key: "widgets"
+            },
+            {
+                resourceObject: new Image(),
+                source: require("../../assets/img/main-menu-background-layers/blur.png"),
+                key: "backgroundBlur"
+            },
+            {
+                resourceObject: new Image(),
+                source: require("../../assets/img/options-background.png"),
+                key: "optionsBackground"
+            }
+        ] })
 
         const splashMessageManager = new SplashMessageManager({
             messages: splashMessages,
             intervalTime: splashMessageIntervalTime
         })
 
-        const resourceLoader = new ResourceLoader({ resources: [
-            {
-                resourceObject: new Image(),
-                source: logoIntroSource
-            },
-            {
-                resourceObject: new Image(),
-                source: textureSpritesSource
-            },
-            {
-                loadEventName: "loadeddata",
-                resourceObject: new Audio(),
-                source: soundtrackSource
-            },
-            {
-                resourceObject: playerSkin,
-                source: steveSkinSource
-            },
-            {
-                resourceObject: new Image(),
-                source: logoSource
-            },
-            {
-                resourceObject: new Image(),
-                source: mainMenuBackgroundLayerTwo
-            },
-            {
-                resourceObject: new Image(),
-                source: widgetsSource
-            },
-            {
-                resourceObject: new Image(),
-                source: mainMenuBackgroundBlur
-            }
-        ] })
-
         const gameContext = {
             splashMessageManager: splashMessageManager,
+            getWorldGenerationProgress: () => worldGenerationProgress,
             getLoadedResources: () => loadedResources,
             amountOfResources: resourceLoader.props.resources.length
         }
@@ -125,52 +142,20 @@ const HomePage: FC = () => {
 
                 loadedResources.push(resource)
 
-                if (resource.source === soundtrackSource) {
+                if (resource.key === "music1") {
                     const soundtrack = resource.resourceObject
                     await playSoundtrack(soundtrack)
-                } else if (resource.source === logoIntroSource) {
-                    gameRender.setProps({
-                        currentScreen: "intro",
+                } else if (resource.resourceObject instanceof HTMLImageElement) {
+                    const newProps: GameRenderNewProps = {
                         images: {
                             ...gameRender.props.images,
-                            logoIntro: resource.resourceObject as HTMLImageElement
+                            [resource.key]: resource.resourceObject
                         }
-                    })
-                } else if (resource.source === logoSource) {
-                    gameRender.setProps({
-                        images: {
-                            ...gameRender.props.images,
-                            logo: resource.resourceObject as HTMLImageElement
-                        }
-                    })
-                } else if (resource.source === textureSpritesSource) {
-                    gameRender.setProps({
-                        images: {
-                            ...gameRender.props.images,
-                            textureSprites: resource.resourceObject as HTMLImageElement
-                        }
-                    })
-                } else if (resource.source === mainMenuBackgroundLayerTwo) {
-                    gameRender.setProps({
-                        images: {
-                            ...gameRender.props.images,
-                            backgroundLayerTwo: resource.resourceObject as HTMLImageElement
-                        }
-                    })
-                } else if (resource.source === widgetsSource) {
-                    gameRender.setProps({
-                        images: {
-                            ...gameRender.props.images,
-                            widgets: resource.resourceObject as HTMLImageElement
-                        }
-                    })
-                } else if (resource.source === mainMenuBackgroundBlur) {
-                    gameRender.setProps({
-                        images: {
-                            ...gameRender.props.images,
-                            backgroundBlur: resource.resourceObject as HTMLImageElement
-                        }
-                    })
+                    }
+
+                    if (resource.key === "logoIntro") newProps.currentScreen = "intro"
+
+                    gameRender.setProps(newProps)
                 }
 
             } else if (event === "loadedAllResources") {
@@ -187,6 +172,51 @@ const HomePage: FC = () => {
                     player,
                     gameRender.props.currentScreen
                 ))
+            }
+        })
+
+        game.subscribe(async (sender, event, ...args) => {
+            if (sender === "WorldGenerator") {
+                if (event === "startedGeneration") {
+                    worldGenerationProgress.stagesCompleted = 0
+                    worldGenerationProgress.totalStages = worldGenerationStepsCount
+                    worldGenerationProgress.currentStageName = "Gerando Chunks..."
+                    await wait(300)
+                } else if (event === "finishedGeneration") {
+                    worldGenerationProgress.currentStageName = "Pronto!"
+                    await wait(600)
+                    gameRender.setProps({ currentScreen: "world" })
+                } else {
+                    const stageNames: { [key: number]: string } = {
+                        1: "Gerando Chunks"
+                    }
+
+                    const stageName = stageNames[worldGenerationProgress.stagesCompleted] || "Gerando Terreno..."
+
+                    worldGenerationProgress.stagesCompleted++
+                }
+            }
+        })
+
+        gameRender.subscribe((event, ...args) => {
+            if (event === "widgetClick") {
+                const buttonKey = args[0]
+
+                switch (buttonKey) {
+                    case "mainMenu.singlePlayerButton":
+                        gameRender.setProps({ currentScreen: "generatingWorld" })
+                        game.createWorld(game.props.player)
+                        break
+                    
+                    case "mainMenu.CreditsButton":
+                        break
+
+                    case "mainMenu.OptionsButton":
+                        break
+
+                    default:
+                        throw new Error(`Not found button key: ${buttonKey}`)
+                }
             }
         })
 
