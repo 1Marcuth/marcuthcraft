@@ -1,9 +1,9 @@
 import { chunkWidth, maxChunksToLeft, maxChunksToRight, startChunkIndex, worldSize } from "./../game-config"
 import { biomeGenerationSettings } from "./settings"
 import Chunk, { ChunkPartialProps } from "./chunk"
+import Noise from "../utils/noise"
 import PRNG from "../utils/prng"
 import Block from "./block"
-import Noise from "../utils/noise"
 
 enum WorldGeneratorEvents {
     startedGeneration,
@@ -114,10 +114,8 @@ class WorldGenerator {
             seed: seed,
             height: worldSize.height,
             width: worldSize.width,
-            threshold: .2,
-            octaves: 4,
-            persistence: .5,
-            lacunarity: 2
+            density: .53,
+            iterations: 10
         })
 
         for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
@@ -130,9 +128,16 @@ class WorldGenerator {
 
                 if (isVoid && currentBlock.props.type === "STONE") {
                     chunks[chunkIndex].props.data[blockIndex] = new Block({
-                        name: "Ar",
-                        type: "AIR",
-                        isSolid: false
+                        name: "Rocha-mãe",
+                        type: "BEDROCK",
+                        isSolid: true,
+                        resistance: "infinite",
+                        clipping: {
+                            x: 48,
+                            y: 0,
+                            width: 16,
+                            height: 16
+                        }
                     })
                 }
             }

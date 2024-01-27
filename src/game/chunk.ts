@@ -191,6 +191,8 @@ function selectBlockType({
         return BlockTypes.BEDROCK
     }
 
+    return BlockTypes.STONE
+
     if (y <= height) {
         if (y === height) {
             return BlockTypes.GRASS
