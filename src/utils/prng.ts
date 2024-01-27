@@ -35,8 +35,9 @@ class PRNG {
         if (!min) min = 0
 
         if (max) {
-            max = min
-            min = 0
+            const temp = min
+            min = max
+            max = temp
         }
 
         if (min === 0 || (!max || max === 0 || max === 1)) {
@@ -51,7 +52,7 @@ class PRNG {
             min = minOrMax
         }
 
-        return this.lcgRandom() * (max - min) + min
+        return value * (max - min) + min
     }
 }
 

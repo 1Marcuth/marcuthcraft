@@ -836,8 +836,7 @@ class GameRender {
             drawProgressBarBackground()
             drawProgressBar()
         }
-
-    
+        
         clearScreen()
 
         switch (currentScreen) {

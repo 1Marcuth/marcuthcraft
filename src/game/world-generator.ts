@@ -18,6 +18,9 @@ type Observer = (eventType: WorldGeneratorEventType, ...args: any[]) => any
 
 export const worldGenerationStepsCount = (Object.keys(WorldGeneratorEvents).length / 2) - 2
 
+const minChunksPerBiome = 5
+const maxChunksPerBiome = 10
+
 class WorldGenerator {
     private observers: Observer[] = []
     private seed: Seed
@@ -31,7 +34,7 @@ class WorldGenerator {
     private generateTerrainHeightNoise(width: number, chunkIndex: number): number[] {
         return Noise.generateHeightMap({
             seed: this.prng.seed,
-            offset: chunkIndex,
+            offset: chunkIndex * width,
             width: width,
             scale: 30,
             octaves: 2,
@@ -78,9 +81,23 @@ class WorldGenerator {
 
         this.notifyAll("startedGeneration")
 
+        const chunkBiomes: string[] = []
+
+        while (chunkBiomes.length < chunkCount) {
+            const currentBiome = this.selectBiome()
+        
+            const biomeDuration = Math.floor(
+                this.prng.next(maxChunksPerBiome, minChunksPerBiome)
+            )
+
+            for (let i = 0; i < biomeDuration; i++) {
+                chunkBiomes.push(currentBiome)
+            }
+        }
+
         for (let i = 0; i < chunkCount; i++) {
             const terrainHeightNoise = this.generateTerrainHeightNoise(chunkWidth, i)
-            const biomeType = this.selectBiome()
+            const biomeType = chunkBiomes[i]
             const chunkProps = this.generateChunkProps(i, biomeType, terrainHeightNoise)
             const chunk = new Chunk(chunkProps)
             chunks.push(chunk)

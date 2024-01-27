@@ -193,11 +193,21 @@ function selectBlockType({
 
     if (biomeSettings) {
         for (const blockLayer of biomeSettings.blockLayers) {
-            if (y >= blockLayer.layerRange[0] && y <= blockLayer.layerRange[1]) {
+            const adjustedLayerRange = [ ...blockLayer.layerRange ].map((layerRangeValue, index) => {
+                // if (blockLayer.blockType === BlockTypes.STONE) {
+                //     return layerRangeValue + Math.floor(noiseHeight * 10)
+                // } else if (blockLayer.blockType === BlockTypes.DIRT) {
+                //     return layerRangeValue - Math.floor(noiseHeight * 10)
+                // }
+
+                return layerRangeValue
+            })
+            // justamente pela variação de altura que não acaba entrando nessa condição
+            if (y >= adjustedLayerRange[0] && y <= adjustedLayerRange[1]) {
                 if (blockLayer.spawnVariationLayers) {
                     for (const variationLayer of blockLayer.spawnVariationLayers) {
                         if (y >= variationLayer.layerRange[0] && y <= variationLayer.layerRange[1]) {
-                            if (prng.next() > variationLayer.spawnChance) {
+                            if (prng.next() < variationLayer.spawnChance) {
                                 const randomBlockIndex = Math.floor(prng.next() * variationLayer.alternativeBlocks.length)
                                 const randomBlockType = variationLayer.alternativeBlocks[randomBlockIndex]
                                 return randomBlockType
@@ -207,12 +217,14 @@ function selectBlockType({
                 }
 
                 if (blockLayer.blockType === BlockTypes.DIRT && y === blockLayer.layerRange[1]) {
-                        return BlockTypes.GRASS
+                    return BlockTypes.GRASS
                 }
 
                 return blockLayer.blockType
+            } else if (y >= blockLayer.layerRange[0] && y <= blockLayer.layerRange[1]) {
+                return BlockTypes.WATER
             }
-        }
+        } 
     }
 
     return BlockTypes.AIR
@@ -236,7 +248,7 @@ function generateBlock({
     const selectedBlockType = selectBlockType({
         index: index,
         chunk: chunk,
-        prng: new PRNG(prng.seed + index),
+        prng: prng,
         biomeType: biomeType,
         noiseHeight: noiseHeight
     })
@@ -287,6 +299,8 @@ class Chunk {
     }
 
     private generateData() {
+
+        console.log(this.props.terrainHeightNoise.map(v => v * 10))
         for (let blockIndex = 0; blockIndex < this.props.width * worldSize.height; blockIndex++) {
             const noiseIndex = blockIndex % this.props.width
 
