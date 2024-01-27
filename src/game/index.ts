@@ -32,7 +32,7 @@ class Game {
     }
 
     public createWorld(player: Player): void {
-        const world = new World({ seed: 1 })
+        const world = new World({ seed: 123 })
         world.subscribe((sender, event, ...args) => this.notifyAll(sender, event, ...args))
         world.generate()
         world.addPlayer(player, { x: 0, y: 0 })

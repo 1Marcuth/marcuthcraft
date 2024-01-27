@@ -14,7 +14,6 @@ export type WorldProps = {
     seed?: string | number
     chunks: Chunks
     entities: Entity[]
-    prng: PRNG
 }
 
 export type Coordinates = {
@@ -33,19 +32,17 @@ class World {
     private observers: Observer[] = []
 
     public constructor(props: WorldPartialProps) {
-        if (!props.seed) props.seed = randomUUID()
-
         this.id = randomUUID()
         this.props = {
             ...props,
             chunks: {},
-            entities: [],
-            prng: new PRNG(props.seed)
+            entities: []
         }
     }
 
     public generate() {
-        const generator = new WorldGenerator(this.props.prng.seed)
+        const worldSeed = this.props.seed ?? randomUUID()
+        const generator = new WorldGenerator(worldSeed)
 
         generator.subscribe((event, ...args) => this.notifyAll(WorldGenerator.name, event, ...args))
 

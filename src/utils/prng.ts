@@ -6,13 +6,13 @@ class PRNG {
 
     constructor(seed: string | number) {
         if (typeof seed === "string") {
-            this.seed = this.stringToSeed(seed)
+            this.seed = PRNG.stringToSeed(seed)
         } else {
             this.seed = seed
         }
     }
 
-    private stringToSeed(seed: string): number {
+    public static stringToSeed(seed: string): number {
         let result = 0
 
         for (let i = 0; i < seed.length; i++) {

@@ -178,10 +178,12 @@ function selectBlockType({
     biomeType,
     noiseHeight
 }: SelectBlockProps): string {
+    const multiplier = 10
+    const height = Math.round(worldSize.height - multiplier + (noiseHeight * multiplier))
     const y = Math.floor(index / chunk.props.width)
 
-    const lowerBlockIndex = index - chunk.props.width
-    const lowerBlock = chunk.props.data[lowerBlockIndex]
+    // const lowerBlockIndex = index - chunk.props.width
+    // const lowerBlock = chunk.props.data[lowerBlockIndex]
 
     if (chunk.props.borders.left && (index + 1) % chunk.props.width === 0) {
         return BlockTypes.BEDROCK
@@ -189,42 +191,40 @@ function selectBlockType({
         return BlockTypes.BEDROCK
     }
 
-    const biomeSettings = biomeGenerationSettings.find(biomeSettings => biomeSettings.type === biomeType)
+    if (y <= height) {
+        if (y === height) {
+            return BlockTypes.GRASS
+        }
 
-    if (biomeSettings) {
-        for (const blockLayer of biomeSettings.blockLayers) {
-            const adjustedLayerRange = [ ...blockLayer.layerRange ].map((layerRangeValue, index) => {
-                // if (blockLayer.blockType === BlockTypes.STONE) {
-                //     return layerRangeValue + Math.floor(noiseHeight * 10)
-                // } else if (blockLayer.blockType === BlockTypes.DIRT) {
-                //     return layerRangeValue - Math.floor(noiseHeight * 10)
-                // }
+        if (y === 0) {
+            return BlockTypes.BEDROCK
+        }
 
-                return layerRangeValue
-            })
-            // justamente pela variação de altura que não acaba entrando nessa condição
-            if (y >= adjustedLayerRange[0] && y <= adjustedLayerRange[1]) {
-                if (blockLayer.spawnVariationLayers) {
-                    for (const variationLayer of blockLayer.spawnVariationLayers) {
-                        if (y >= variationLayer.layerRange[0] && y <= variationLayer.layerRange[1]) {
-                            if (prng.next() < variationLayer.spawnChance) {
-                                const randomBlockIndex = Math.floor(prng.next() * variationLayer.alternativeBlocks.length)
-                                const randomBlockType = variationLayer.alternativeBlocks[randomBlockIndex]
-                                return randomBlockType
-                            }
-                        }
-                    }
-                }
+        if (y === 1 && prng.next() < .95) {
+            return BlockTypes.BEDROCK
+        }
 
-                if (blockLayer.blockType === BlockTypes.DIRT && y === blockLayer.layerRange[1]) {
-                    return BlockTypes.GRASS
-                }
+        if (y === 2 && prng.next() < .75) {
+            return BlockTypes.BEDROCK
+        }
 
-                return blockLayer.blockType
-            } else if (y >= blockLayer.layerRange[0] && y <= blockLayer.layerRange[1]) {
-                return BlockTypes.WATER
+        if (y === 3 && prng.next() < .55) {
+            return BlockTypes.BEDROCK
+        }
+
+        if (y <= height - 6) {
+            if (y === height - 6 && prng.next() < .5) {
+                return BlockTypes.DIRT
             }
-        } 
+
+            if (y === height - 7 && prng.next() < .15) {
+                return BlockTypes.DIRT
+            }
+
+            return BlockTypes.STONE
+        }
+
+        return BlockTypes.DIRT
     }
 
     return BlockTypes.AIR
@@ -299,8 +299,6 @@ class Chunk {
     }
 
     private generateData() {
-
-        console.log(this.props.terrainHeightNoise.map(v => v * 10))
         for (let blockIndex = 0; blockIndex < this.props.width * worldSize.height; blockIndex++) {
             const noiseIndex = blockIndex % this.props.width
 
