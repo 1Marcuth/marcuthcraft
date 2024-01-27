@@ -1,9 +1,9 @@
 import { chunkWidth, maxChunksToLeft, maxChunksToRight, startChunkIndex, worldSize } from "./../game-config"
 import { biomeGenerationSettings } from "./settings"
 import Chunk, { ChunkPartialProps } from "./chunk"
-import Noise from "../utils/noise"
 import PRNG from "../utils/prng"
 import Block from "./block"
+import Noise from "../utils/noise"
 
 enum WorldGeneratorEvents {
     startedGeneration,
@@ -76,11 +76,9 @@ class WorldGenerator {
         }
     }
 
-    public generateChunks(): Chunk[] {
+    private generateChunks(): Chunk[] {
         const chunks: Chunk[] = []
         const chunkCount = maxChunksToLeft + maxChunksToRight + 1
-
-        this.notifyAll("startedGeneration")
 
         const chunkBiomes: string[] = []
 
@@ -106,21 +104,20 @@ class WorldGenerator {
 
         this.notifyAll("generatedChunks")
 
-        this.generateCaves(chunks)
-
-        this.notifyAll("finishedGeneration")
-
         return chunks
     }
 
-    public generateCaves(chunks: Chunk[]) {
+    private generateCaves(chunks: Chunk[]): void {
         const seed = typeof this.seed === "number" ? this.seed : PRNG.stringToSeed(this.seed)
 
         const cavesNoise = Noise.generateCavesMap({
             seed: seed,
-            width: worldSize.width,
             height: worldSize.height,
-            threshold: .1
+            width: worldSize.width,
+            threshold: .2,
+            octaves: 4,
+            persistence: .5,
+            lacunarity: 2
         })
 
         for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
@@ -131,7 +128,7 @@ class WorldGenerator {
                 const currentBlock = chunks[chunkIndex].props.data[blockIndex]
                 const isVoid = cavesNoise[x][y] === 0
 
-                if (isVoid && currentBlock.props.type !== "BEDROCK" && currentBlock.props.type !== "AIR") {
+                if (isVoid && currentBlock.props.type === "STONE") {
                     chunks[chunkIndex].props.data[blockIndex] = new Block({
                         name: "Ar",
                         type: "AIR",
@@ -140,6 +137,17 @@ class WorldGenerator {
                 }
             }
         }
+    }
+
+    public generate(): Chunk[] {
+        this.notifyAll("startedGeneration")
+
+        const chunks = this.generateChunks()
+        this.generateCaves(chunks)
+
+        this.notifyAll("finishedGeneration")
+
+        return chunks
     }
 
     public subscribe(observer: Observer): void {

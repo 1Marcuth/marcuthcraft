@@ -16,6 +16,9 @@ type GenerateCavesMapOptions = {
     width: number
     height: number
     threshold: number
+    octaves: number
+    persistence: number
+    lacunarity: number
 }
 
 class Noise {
@@ -55,6 +58,9 @@ class Noise {
         width,
         height,
         threshold,
+        octaves,
+        persistence,
+        lacunarity
     }: GenerateCavesMapOptions): number[][] {
         const cavesMap: number[][] = []
 
@@ -62,8 +68,29 @@ class Noise {
             cavesMap[x] = []
 
             for (let y = 0; y < height; y++) {
-                let noise = Perlin.noise(seed, x / 10, y / 10)
+                let noise = 0
+
+                for (let octave = 0; octave < octaves; octave++) {
+                    noise += Perlin.noise(
+                        seed,
+                        x / (10 * Math.pow(2, octave)),
+                        y / (10 * Math.pow(2, octave))
+                    ) * persistence
+                }
+
                 cavesMap[x][y] = noise
+            }
+        }
+
+        for (let x = 0; x < width; x++) {
+            for (let y = 0; y < height; y++) {
+                cavesMap[x][y] = (
+                    cavesMap[x][y] +
+                    cavesMap[x - 1][y] +
+                    cavesMap[x + 1][y] +
+                    cavesMap[x][y - 1] +
+                    cavesMap[x][y + 1]
+                ) / 5
             }
         }
 

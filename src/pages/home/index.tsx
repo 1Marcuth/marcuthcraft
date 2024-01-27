@@ -194,6 +194,7 @@ const HomePage: FC = () => {
                     const stageName = stageNames[worldGenerationProgress.stagesCompleted] || "Gerando Terreno..."
 
                     worldGenerationProgress.stagesCompleted++
+                    worldGenerationProgress.currentStageName = stageName
                 }
             }
         })

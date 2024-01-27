@@ -1,4 +1,3 @@
-import { worldGenerationStepsCount } from './world-generator';
 import Player from "./player"
 import World from "./world"
 
@@ -39,16 +38,7 @@ class Game {
         this.props.world = world
     }
 
-    public update() {
-        // Update the game state based on input and physics
-        // if (this.props.player) {
-        //     this.props.player.update()
-        // }
-
-        // if (this.props.world) {
-        //     this.props.world.update()
-        // }
-    }
+    public update() {}
 
     public subscribe(observer: Observer): void {
         this.observers.push(observer)

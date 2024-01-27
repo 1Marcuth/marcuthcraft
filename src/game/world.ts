@@ -1,6 +1,5 @@
 import randomUUID from "../utils/id-generator"
 import WorldGenerator from "./world-generator"
-import PRNG from "../utils/prng"
 import Player from "./player"
 import Entity from "./entity"
 import Chunk from "./chunk"
@@ -40,13 +39,13 @@ class World {
         }
     }
 
-    public generate() {
+    public generate(): void {
         const worldSeed = this.props.seed ?? randomUUID()
         const generator = new WorldGenerator(worldSeed)
 
         generator.subscribe((event, ...args) => this.notifyAll(WorldGenerator.name, event, ...args))
 
-        const chunks = generator.generateChunks()
+        const chunks = generator.generate()
         
         for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
             const chunk = chunks[chunkIndex]
@@ -54,11 +53,9 @@ class World {
         }
     }
 
-    public load() {
+    public load() {}
 
-    }
-
-    private getBlockAt(chunkIndex: number, blockIndex: number): Block | undefined {
+    public getBlockAt(chunkIndex: number, blockIndex: number): Block | undefined {
         const chunk = this.props.chunks[chunkIndex]
 
         if (chunk) {
@@ -67,7 +64,7 @@ class World {
         }
     }
 
-    private setBlockAt(chunkIndex: number, blockIndex: number, block: Block): void {
+    public setBlockAt(chunkIndex: number, blockIndex: number, block: Block): void {
         const chunk = this.props.chunks[chunkIndex]
 
         if (chunk) {
@@ -75,9 +72,9 @@ class World {
         }
     }
 
-    public addPlayer(player: Player, coordinates: Coordinates) {
+    public addEntity(entity: Entity, coordinates: Coordinates): void {}
 
-    }
+    public addPlayer(player: Player, coordinates: Coordinates): void {}
 
     public subscribe(observer: Observer): void {
         this.observers.push(observer)
