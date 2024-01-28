@@ -23,6 +23,7 @@ import World from "../../game/common/world"
 import Game from "../../game"
 
 import styles from "./style.module.scss"
+import importFile from "../../utils/import-file"
 
 const HomePage: FC = () => {
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
@@ -66,11 +67,10 @@ const HomePage: FC = () => {
             }
 
             if (modifierKeys.ctrl && keyPressed === "KeyI") {
-                const fileInput = document.createElement("input")
-                fileInput.type = "file"
-                fileInput.accept = worldFileExtension
-                fileInput.click()
-                fileInput.addEventListener("change", handleWorldFileChange)
+                const worldFile = await importFile({ acceptedExtensions: [ worldFileExtension ] })
+                game.props.world = new World({})
+                await game.props.world.import(worldFile)
+                gameRender.setProps({ currentScreen: "world" })
             }
 
             if (currentScreen === "world") {

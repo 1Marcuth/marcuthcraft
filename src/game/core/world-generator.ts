@@ -64,7 +64,7 @@ class WorldGenerator {
 
     private generateChunkProps(index: number, biomeType: string, terrainHeightNoise: number[]): ChunkProps {
         const firstChunkIndex = 0
-        const lastChunkIndex = maxChunksToLeft + 1 + maxChunksToRight
+        const lastChunkIndex = maxChunksToLeft + maxChunksToRight
         
         const borders = {
             left: index === firstChunkIndex,
