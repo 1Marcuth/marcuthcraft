@@ -10,8 +10,6 @@
 
 ## TODO:
 
-Claro, aqui está uma versão melhorada da sua lista:
-
 - [ ] Desenvolvimento de Física do Jogo:
     - [ ] Implementar colisões e gravidade para interação com o jogador.
     - [ ] Adicionar física a blocos selecionados.
