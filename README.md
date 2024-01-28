@@ -21,9 +21,9 @@ Claro, aqui está uma versão melhorada da sua lista:
 - [ ] Adicionar Sistema de Pontos de Vida.
 - [ ] Introduzir Sistema de Pontos de Saturação.
 - [ ] Permitir Importação de Skins.
-- [ ] Criar Tela de Criação de Mundo.
+- [ ] Implementar Tela de Criação de Mundo.
 - [ ] Implementar Tela de Importação de Mundo.
-- [ ] Incluir Tela de Exportação de Mundo.
+- [ ] Implementar Tela de Exportação de Mundo.
 - [ ] Aperfeiçoar Algoritmo de Geração de Terreno.
 - [ ] Introduzir Criaturas (Mobs).
 - [ ] Implementar Sistema de Iluminação.
@@ -35,7 +35,7 @@ Claro, aqui está uma versão melhorada da sua lista:
 - [ ] Integrar Funcionalidade Multiplayer.
 - [ ] Integrar Servidores para Partidas Online.
 - [ ] Adicionar Suporte para Mods.
-- [ ] Incluir Tela de Créditos.
+- [ ] Implementar Tela de Créditos.
 - [ ] Implementar Tela de Configurações/Opções. 
 
 ## Anotações
