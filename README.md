@@ -33,6 +33,8 @@
 - [ ] Adicionar possibilidade de partidas multiplayer;
 - [ ] Adicionar servidores;
 - [ ] Adicionar possibilidade de uso de mods;
+- [ ] Adicionar tela de créditos;
+- [ ] Adicionar tela de configurações/opções;
 
 ## Anotações
 
