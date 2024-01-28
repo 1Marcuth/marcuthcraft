@@ -10,31 +10,33 @@
 
 ## TODO:
 
-- [ ] Desenvolver a física do jogo;
-    - [ ] Adicionar colisões e gravidade em relação ao jogador;
-    - [ ] Adiconar física para alguns blocos;
-    - [ ] Adicionar física a água;
-- [ ] Animar o jogador;
-- [ ] Adiconar iventário do jogador;
-- [ ] Adicionar pontos de vida do jogador;
-- [ ] Adicionar pontos de saturação do jogador;
-- [ ] Adicionar possibilidade de importar skin;
-- [ ] Adicionar tela de criação de mundo;
-- [ ] Adicionar tela de importação de mundo;
-- [ ] Adicionar tela de exportação de mundo;
-- [ ] Melhorar algoritmo de geração das camadas mais superficiais;
-- [ ] Adicioar criaturas (mobs);
-- [ ] Adicionar sistema de iluminação do jogo;
-- [ ] Adicionar mais blocos;
-- [ ] Adicionar mais biomas;
-- [ ] Criar um sistema de partículas para efeitos visuais;
-- [ ] Criar um sistema de comandos;
-- [ ] Adicionar possibilidade de importação de pacote de texturas;
-- [ ] Adicionar possibilidade de partidas multiplayer;
-- [ ] Adicionar servidores;
-- [ ] Adicionar possibilidade de uso de mods;
-- [ ] Adicionar tela de créditos;
-- [ ] Adicionar tela de configurações/opções;
+Claro, aqui está uma versão melhorada da sua lista:
+
+- [ ] Desenvolvimento de Física do Jogo:
+    - [ ] Implementar colisões e gravidade para interação com o jogador.
+    - [ ] Adicionar física a blocos selecionados.
+    - [ ] Integrar física à água para simulação realista.
+- [ ] Animação do Jogador.
+- [ ] Implementar Inventário do Jogador.
+- [ ] Adicionar Sistema de Pontos de Vida.
+- [ ] Introduzir Sistema de Pontos de Saturação.
+- [ ] Permitir Importação de Skins.
+- [ ] Criar Tela de Criação de Mundo.
+- [ ] Implementar Tela de Importação de Mundo.
+- [ ] Incluir Tela de Exportação de Mundo.
+- [ ] Aperfeiçoar Algoritmo de Geração de Terreno.
+- [ ] Introduzir Criaturas (Mobs).
+- [ ] Implementar Sistema de Iluminação.
+- [ ] Adicionar Novos Tipos de Blocos.
+- [ ] Expandir Variedade de Biomas.
+- [ ] Desenvolver Sistema de Partículas para Efeitos Visuais.
+- [ ] Criar Sistema de Comandos para Interatividade Avançada.
+- [ ] Possibilitar Importação de Pacotes de Texturas.
+- [ ] Integrar Funcionalidade Multiplayer.
+- [ ] Integrar Servidores para Partidas Online.
+- [ ] Adicionar Suporte para Mods.
+- [ ] Incluir Tela de Créditos.
+- [ ] Implementar Tela de Configurações/Opções. 
 
 ## Anotações
 
