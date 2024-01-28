@@ -1,5 +1,5 @@
 import { chunkWidth, maxChunksToLeft, maxChunksToRight, startChunkIndex, worldSize } from "./../game-config"
-import { biomeGenerationSettings } from "./settings"
+import { biomeGenerationSettings, BlockTypes } from "./settings"
 import Chunk, { ChunkPartialProps } from "./chunk"
 import Noise from "../utils/noise"
 import PRNG from "../utils/prng"
@@ -115,29 +115,29 @@ class WorldGenerator {
             height: worldSize.height,
             width: worldSize.width,
             density: .53,
-            iterations: 10
+            iterations: 5
         })
 
         for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
             for (let blockIndex = 0; blockIndex < chunkWidth * worldSize.height; blockIndex++) {
-                const x = chunkIndex * chunkWidth + Math.floor(blockIndex / worldSize.height)
-                const y = blockIndex % worldSize.height
+                const blockX = blockIndex % chunkWidth
+                const blockY = Math.floor(blockIndex / chunkWidth)
 
-                const currentBlock = chunks[chunkIndex].props.data[blockIndex]
-                const isVoid = cavesNoise[x][y] === 0
+                const x = chunkIndex * chunkWidth + blockX
+                const y = blockY
 
-                if (isVoid && currentBlock.props.type === "STONE") {
+                const currentBlockType = chunks[chunkIndex].props.data[blockIndex].props.type
+
+                if (
+                    cavesNoise[x][y] === 0 &&
+                    currentBlockType != BlockTypes.BEDROCK &&
+                    currentBlockType != BlockTypes.DIRT &&
+                    currentBlockType != BlockTypes.GRASS
+                ) {
                     chunks[chunkIndex].props.data[blockIndex] = new Block({
-                        name: "Rocha-mãe",
-                        type: "BEDROCK",
-                        isSolid: true,
-                        resistance: "infinite",
-                        clipping: {
-                            x: 48,
-                            y: 0,
-                            width: 16,
-                            height: 16
-                        }
+                        name: "Ar",
+                        type: "AIR",
+                        isSolid: false
                     })
                 }
             }

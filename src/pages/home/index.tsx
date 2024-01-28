@@ -49,7 +49,7 @@ const HomePage: FC = () => {
             try {
                 soundtrack.loop = true
                 soundtrack.volume = .3
-                await soundtrack.play()
+                // await soundtrack.play()
             } catch(error) {
                 await wait(1000)
                 return await playSoundtrack(soundtrack)

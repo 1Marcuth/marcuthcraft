@@ -26,7 +26,7 @@ class CaveGenerator {
     private prng: PRNG
 
     private constructor(props: CaveGeneratorProps) {
-        this.props = props;
+        this.props = props
         this.prng = new PRNG(this.props.seed)
     }
 
@@ -51,7 +51,7 @@ class CaveGenerator {
             caveMap[x] = [];
             for (let y = 0; y < height; y++) {
                 let xyz = this.prng.next()
-                caveMap[x][y] = xyz < density ? 0 : 1
+                caveMap[x][y] = xyz < density ? 1 : 0
             }
         }
 
