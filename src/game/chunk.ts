@@ -1,7 +1,6 @@
 import { BlockTypes, biomeGenerationSettings } from "./settings"
 import Block, { BlockPartialProps } from "./block"
 import { worldSize } from "./../game-config"
-import PRNG from "../utils/prng"
 
 export function getBlockByType(blockType: string): BlockPartialProps {
     const blocksProps: BlockPartialProps[] = [
@@ -163,157 +162,47 @@ export function getBlockByType(blockType: string): BlockPartialProps {
     return blockProps
 }
 
-type SelectBlockProps = {
-    index: number
-    chunk: Chunk
-    prng: PRNG
-    biomeType: string
-    noiseHeight: number
-}
+export function getBiomeSettingsByType(biomeType: string) {
+    const biomeSettings = biomeGenerationSettings.find(biome => biome.type === biomeType)
 
-function selectBlockType({
-    index,
-    chunk,
-    prng,
-    biomeType,
-    noiseHeight
-}: SelectBlockProps): string {
-    const multiplier = 10
-    const height = Math.round(worldSize.height - multiplier + (noiseHeight * multiplier))
-    const y = Math.floor(index / chunk.props.width)
-
-    // const lowerBlockIndex = index - chunk.props.width
-    // const lowerBlock = chunk.props.data[lowerBlockIndex]
-
-    if (chunk.props.borders.left && (index + 1) % chunk.props.width === 0) {
-        return BlockTypes.BEDROCK
-    } else if(chunk.props.borders.right && index % chunk.props.width === 0) {
-        return BlockTypes.BEDROCK
+    if (!biomeSettings) {
+        throw new Error(`Unknown biome type "${biomeType}"`)
     }
 
-    if (y <= height) {
-        if (y === height) {
-            return BlockTypes.GRASS
-        }
-
-        if (y === 0) {
-            return BlockTypes.BEDROCK
-        }
-
-        if (y === 1 && prng.next() < .95) {
-            return BlockTypes.BEDROCK
-        }
-
-        if (y === 2 && prng.next() < .75) {
-            return BlockTypes.BEDROCK
-        }
-
-        if (y === 3 && prng.next() < .55) {
-            return BlockTypes.BEDROCK
-        }
-
-        if (y <= height - 6) {
-            if (y === height - 6 && prng.next() < .5) {
-                return BlockTypes.DIRT
-            }
-
-            if (y === height - 7 && prng.next() < .15) {
-                return BlockTypes.DIRT
-            }
-
-            return BlockTypes.STONE
-        }
-
-        return BlockTypes.DIRT
-    }
-
-    return BlockTypes.AIR
-}
-
-type GenerateBlockProps = {
-    index: number
-    chunk: Chunk
-    prng: PRNG
-    biomeType: string
-    noiseHeight: number
-}
-
-function generateBlock({
-    index,
-    chunk,
-    prng,
-    biomeType,
-    noiseHeight
-}: GenerateBlockProps): Block {
-    const selectedBlockType = selectBlockType({
-        index: index,
-        chunk: chunk,
-        prng: prng,
-        biomeType: biomeType,
-        noiseHeight: noiseHeight
-    })
-
-    const selectedBlock = getBlockByType(selectedBlockType)
-    const lowerBlockIndex = index - chunk.props.width
-    const lowerBlock = chunk.props.data[lowerBlockIndex]
-
-    const block = new Block({
-        name: selectedBlock.name,
-        type: selectedBlock.type,
-        isSolid: selectedBlock.isSolid,
-        resistance: selectedBlock.resistance,
-        clipping: selectedBlock.clipping,
-        lowerBlockType: lowerBlock ? lowerBlock.props.type : undefined
-    })
-
-    return block
-}
-
-type Borders = {
-    left?: boolean
-    right?: boolean
+    return biomeSettings
 }
 
 export type ChunkProps = {
-    width: number,
-    borders: Borders
+    width: number
     biomeType: string
-    terrainHeightNoise: number[]
-    data: Block[],
-    prng: PRNG
-    index: number
+    data: Block[]
 }
 
-export type ChunkPartialProps = Omit<ChunkProps, "data">
+export type ChunkData = {
+    biomeType: string
+    blockTypes: string[] 
+}
 
 class Chunk {
     public props: ChunkProps
 
-    public constructor(props: ChunkPartialProps) {
-        this.props = {
-            ...props,
-            data: []
-        }
-
-        this.generateData()
+    public constructor(props: ChunkProps) {
+        this.props = props
     }
 
-    private generateData() {
-        for (let blockIndex = 0; blockIndex < this.props.width * worldSize.height; blockIndex++) {
-            const noiseIndex = blockIndex % this.props.width
-
-            const block = generateBlock({
-                chunk: this,
-                index: blockIndex,
-                prng: this.props.prng,
-                biomeType: this.props.biomeType,
-                noiseHeight: this.props.terrainHeightNoise[noiseIndex]
-            })
-
-            this.props.data.push(block)
+    public getData() {
+        const data: ChunkData = {
+            biomeType: this.props.biomeType,
+            blockTypes: []
         }
 
-        this.props.data = this.props.data.reverse()
+        for (let blockIndex = 0; blockIndex < this.props.data.length; blockIndex++) {
+            const block = this.props.data[blockIndex]
+            const blockType = block.props.type
+            data.blockTypes.push(blockType)
+        }
+
+        return data
     }
 }
 

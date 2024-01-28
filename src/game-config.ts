@@ -5,17 +5,19 @@ export const screenSize = {
 
 export const visionScale = .25
 
+export const gameVersion = "0.1"
+
 export const chunksRenderedByDirection = 4
 export const chunkWidth = 16
-export const maxChunksToLeft = 10
+export const maxChunksToLeft = 5
 export const maxChunksToRight = maxChunksToLeft
 export const startChunkIndex = Math.floor((maxChunksToLeft + maxChunksToLeft) / 2)
 
-export const defaultMoveSpeed = 60
+export const defaultMoveSpeed = 120 * visionScale
 
 export const worldSize = {
     width: (maxChunksToLeft + maxChunksToRight + 1) * chunkWidth,
-    height: 128
+    height: 256
 }
 
 export const blockSize = { width: 60, height: 60 }

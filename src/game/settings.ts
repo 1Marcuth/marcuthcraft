@@ -61,6 +61,7 @@ type BiomeGenerationSettings = {
     type: BiomeType
     spawnChance: number
     maxHeight: number
+    heightNoiseMultiplier: number
     ores: Ore[]
     blockLayers: BlockLayer[]
 }
@@ -69,7 +70,8 @@ const biomeGenerationSettings: BiomeGenerationSettings[] = [
     {
         type: BiomeTypes.MOUNTAIN,
         spawnChance: .1,
-        maxHeight: 128,
+        maxHeight: 160,
+        heightNoiseMultiplier: 15,
         blockLayers: [
             {
                 layerRange: [ 0, 4 ],

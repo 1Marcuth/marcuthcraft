@@ -1,4 +1,11 @@
-type Observer = (keyPressed: string) => any
+export type ModifierKeys = {
+    ctrl: boolean
+    alt: boolean
+    shift: boolean
+    meta: boolean
+}
+
+type Observer = (keyPressed: string, modifierKeys: ModifierKeys) => any
 
 class KeyboardListener {
     private observers: Observer[] = []
@@ -6,22 +13,30 @@ class KeyboardListener {
 
     public constructor(document: Document) {
         this.document = document
-
-        document.addEventListener("keydown", this.handleKeydown.bind(this))
+        this.handleKeydown = this.handleKeydown.bind(this)
+        document.addEventListener("keydown", this.handleKeydown)
     }
 
     private handleKeydown(event: KeyboardEvent) {
         const key = event.code
-        this.notifyAll(key)
+
+        const modifierKeys: ModifierKeys = {
+            ctrl: event.ctrlKey,
+            alt: event.altKey,
+            shift: event.shiftKey,
+            meta: event.metaKey
+        }
+
+        this.notifyAll(key, modifierKeys)
     }
 
     public subscribe(observer: Observer) {
         this.observers.push(observer)
     }
 
-    private notifyAll(keyPressed: string) {
+    private notifyAll(keyPressed: string, modifierKeys: ModifierKeys) {
         for (const observer of this.observers) {
-            observer(keyPressed)
+            observer(keyPressed, modifierKeys)
         }
     }
 

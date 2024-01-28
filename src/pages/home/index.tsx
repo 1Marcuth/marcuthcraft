@@ -6,32 +6,19 @@ import SplashMessageManager from "../../game/splash-message-manager"
 import GameRender, { GameRenderNewProps } from "../../game/render"
 import { wait } from "@testing-library/user-event/dist/utils"
 import Player, { getPlayerAction } from "../../game/player"
-import KeyboardListener from "../../keyboard-listener"
+import KeyboardListener, { ModifierKeys } from "../../keyboard-listener"
 import GameScreen from "../../components/game-screen"
 import Game from "../../game"
 
 import styles from "./style.module.scss"
 import { worldGenerationStepsCount } from "../../game/world-generator"
+import World from "../../game/world"
 
 const HomePage: FC = () => {
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
 
     function handleGameScreenReady(canvas: HTMLCanvasElement) {
         setCanvas(canvas)
-    }
-
-    function handleKeyPressed(
-        keyPressed: string, 
-        player: Player,
-        currentScreen?: string
-    ) {
-        if (currentScreen === "world") {
-            const playerAction = getPlayerAction(keyPressed, player)
-
-            if (playerAction) {
-                playerAction()
-            }
-        }
     }
 
     useEffect(() => {
@@ -43,6 +30,45 @@ const HomePage: FC = () => {
             totalStages: worldGenerationStepsCount,
             currentStageName: "Não Iniciado",
             stagesCompleted: 0
+        }
+
+        async function handleKeyPressed(
+            keyPressed: string,
+            modifierKeys: ModifierKeys,
+            player: Player,
+            currentScreen?: string
+        ) {
+            console.log({keyPressed, modifierKeys})
+
+            if (modifierKeys.ctrl && keyPressed === "KeyE") {
+                game.props.world!.export("meu_mundo.mccworld")
+            }
+
+            if (modifierKeys.ctrl && keyPressed === "KeyI") {
+                const fileInput = document.createElement("input")
+
+                fileInput.type = "file"
+                fileInput.accept = ".mccworld"
+
+                fileInput.onchange = async (event) => {
+                    if (!fileInput.files) return
+                    const worldFile = fileInput.files[0]
+                    console.log("Importando mundo...")
+                    game.props.world = new World({})
+                    await game.props.world.import(worldFile)
+                    gameRender.setProps({ currentScreen: "world" })
+                }
+
+                fileInput.click()
+            }
+
+            if (currentScreen === "world") {
+                const playerAction = getPlayerAction(keyPressed, player)
+    
+                if (playerAction) {
+                    playerAction()
+                }
+            }
         }
 
         async function playSoundtrack(soundtrack: HTMLAudioElement): Promise<any> {
@@ -167,8 +193,9 @@ const HomePage: FC = () => {
 
                 player.subscribe((eventType) => console.log(eventType))
 
-                keyboardListener.subscribe((keyPressed) => handleKeyPressed(
+                keyboardListener.subscribe((keyPressed, modifierKeys) => handleKeyPressed(
                     keyPressed,
+                    modifierKeys,
                     player,
                     gameRender.props.currentScreen
                 ))
@@ -181,7 +208,6 @@ const HomePage: FC = () => {
                     worldGenerationProgress.stagesCompleted = 0
                     worldGenerationProgress.totalStages = worldGenerationStepsCount
                     worldGenerationProgress.currentStageName = "Gerando Chunks..."
-                    await wait(300)
                 } else if (event === "finishedGeneration") {
                     worldGenerationProgress.currentStageName = "Pronto!"
                     await wait(600)
@@ -189,14 +215,14 @@ const HomePage: FC = () => {
                 } else {
                     const stageNames: { [key: number]: string } = {
                         1: "Gerando Chunks",
-                        2: "Gerando Cavernas"
+                        2: "Gerando Minérios",
+                        3: "Gerando Cavernas"
                     }
 
                     const stageName = stageNames[worldGenerationProgress.stagesCompleted] || "Gerando Terreno..."
 
                     worldGenerationProgress.stagesCompleted++
                     worldGenerationProgress.currentStageName = stageName
-                    await wait(600)
                 }
             }
         })

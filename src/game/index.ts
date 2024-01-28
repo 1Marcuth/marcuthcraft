@@ -31,10 +31,10 @@ class Game {
     }
 
     public createWorld(player: Player): void {
-        const world = new World({ seed: 123 })
+        const world = new World({})
         world.subscribe((sender, event, ...args) => this.notifyAll(sender, event, ...args))
         world.generate()
-        world.addPlayer(player, { x: 0, y: 0 })
+        world.addPlayer(player, { x: 0, y: 0 }, true)
         this.props.world = world
     }
 

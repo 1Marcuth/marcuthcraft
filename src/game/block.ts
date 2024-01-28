@@ -14,6 +14,8 @@ export type BlockProps = {
     type: string
     isSolid: boolean
     isLiquid?: boolean
+    isLightSource?: boolean
+    isInteractive?: boolean
     isLiquidSource?: boolean
     liquidSourceBlock?: Block
     dischargeLevel?: number
@@ -21,8 +23,9 @@ export type BlockProps = {
     clipping?: Clipping
     resistance?: Resistance
     currentResistance?: Resistance
-    idealTool?: string
+    idealToolType?: string
     lowerBlockType?: string
+    lightingLevel?: number
 }
 
 export type BlockPartialProps = Omit<BlockProps, "currentResistance" | "destroyed">

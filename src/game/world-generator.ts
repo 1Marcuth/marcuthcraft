@@ -1,13 +1,15 @@
 import { chunkWidth, maxChunksToLeft, maxChunksToRight, startChunkIndex, worldSize } from "./../game-config"
 import { biomeGenerationSettings, BlockTypes } from "./settings"
-import Chunk, { ChunkPartialProps, getBlockByType } from "./chunk"
+import Chunk, { ChunkProps, getBlockByType } from "./chunk"
 import Noise from "../utils/noise"
 import PRNG from "../utils/prng"
 import Block from "./block"
+import ChunkGenerator from "./chunk-generator"
 
 enum WorldGeneratorEvents {
     startedGeneration,
     generatedChunks,
+    generatedOres,
     generatedCaves,
     finishedGeneration
 }
@@ -58,7 +60,7 @@ class WorldGenerator {
         return randomBiome.type
     }
 
-    private generateChunkProps(index: number, biomeType: string, terrainHeightNoise: number[]): ChunkPartialProps {
+    private generateChunkProps(index: number, biomeType: string, terrainHeightNoise: number[]): ChunkProps {
         const firstChunkIndex = 0
         const lastChunkIndex = startChunkIndex + maxChunksToRight
         
@@ -67,14 +69,16 @@ class WorldGenerator {
             right: index === lastChunkIndex
         }
 
-        return {
+        const chunkProps = ChunkGenerator.generate({
             width: chunkWidth,
             borders: borders,
             biomeType: biomeType,
             terrainHeightNoise: terrainHeightNoise,
             prng: new PRNG(this.prng.seed + index),
             index: index
-        }
+        })
+
+        return chunkProps
     }
 
     private generateChunks(): Chunk[] {
@@ -133,11 +137,8 @@ class WorldGenerator {
                     cavesNoise[x][y] === 0 &&
                     currentBlockType !== BlockTypes.BEDROCK
                 ) {
-                    chunks[chunkIndex].props.data[blockIndex] = new Block({
-                        name: "Ar",
-                        type: "AIR",
-                        isSolid: false
-                    })
+                    const blockProps = getBlockByType(BlockTypes.AIR)
+                    chunks[chunkIndex].props.data[blockIndex] = new Block(blockProps)
                 }
             }
         }
@@ -212,14 +213,15 @@ class WorldGenerator {
                         return result
                     })()
     
-                    if (isOreSpace && isInLayerRange && isAReplaceableBlock) {
-                        console.log(oreSettings.blockType)
+                    if (isOreSpace && isInLayerRange && isAReplaceableBlock) {                        
                         const blockProps = getBlockByType(oreSettings.blockType)
                         chunks[chunkIndex].props.data[blockIndex] = new Block(blockProps)
                     }
                 }
             }
         }
+
+        this.notifyAll("generatedOres")
     }
 
     public generate(): Chunk[] {

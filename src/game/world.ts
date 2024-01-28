@@ -1,9 +1,11 @@
+import Chunk, { ChunkData, getBlockByType } from "./chunk"
 import randomUUID from "../utils/id-generator"
 import WorldGenerator from "./world-generator"
+import exportFile from "../utils/export-file"
 import Player from "./player"
 import Entity from "./entity"
-import Chunk from "./chunk"
 import Block from "./block"
+import { gameVersion } from "../game-config"
 
 type Chunks = {
     [key: number]: Chunk
@@ -13,6 +15,8 @@ export type WorldProps = {
     seed?: string | number
     chunks: Chunks
     entities: Entity[]
+    players: Player[]
+    ownerPlayerId?: string
 }
 
 export type Coordinates = {
@@ -20,7 +24,18 @@ export type Coordinates = {
     y: number
 }
 
-type WorldPartialProps = Omit<WorldProps, "chunks" | "entities" | "prng">
+type ChunksData = { [key: number]: ChunkData }
+
+type WorldData = {
+    seed: string | number
+    ownerPlayerId: string
+    chunkWidth: number
+    players: any[]
+    chunks: ChunksData
+    generatedInVersion: string
+}
+
+type WorldPartialProps = Omit<WorldProps, "chunks" | "entities" | "players" | "ownerPlayerId" | "seed">
 
 type Observer = (sender: string, eventType: string, ...args: any[]) => any
 
@@ -35,12 +50,14 @@ class World {
         this.props = {
             ...props,
             chunks: {},
-            entities: []
+            entities: [],
+            players: []
         }
     }
 
-    public generate(): void {
-        const worldSeed = this.props.seed ?? randomUUID()
+    public generate(seed?: string | number): void {
+        this.props.seed = seed ?? randomUUID()
+        const worldSeed = this.props.seed
         const generator = new WorldGenerator(worldSeed)
 
         generator.subscribe((event, ...args) => this.notifyAll(WorldGenerator.name, event, ...args))
@@ -53,7 +70,56 @@ class World {
         }
     }
 
-    public load() {}
+    public async import(file: File): Promise<void> {
+        const dataText = await file.text()
+        const data: WorldData = JSON.parse(dataText)
+        this.load(data)
+    }
+
+    public load(data: WorldData): void {
+        this.props.chunks = {}
+
+        for (const chunkIndex in data.chunks) {
+            const chunkData = data.chunks[chunkIndex]
+
+            const blocks = chunkData.blockTypes.map(blockType => {
+                const blockProps = getBlockByType(blockType)
+                const block = new Block(blockProps)
+                return block
+            })
+
+            this.props.chunks[chunkIndex] = new Chunk({
+                biomeType: chunkData.biomeType,
+                data: blocks,
+                width: data.chunkWidth
+            })
+        }
+    }
+
+    public export(fileName: string): void {
+        const chunkWidth = this.props.chunks[0].props.width
+        const ownerPlayerId = this.props.ownerPlayerId!
+        const playersData = this.props.players.map(player => player.getData())
+
+        const worldData: WorldData = {
+            seed: this.props.seed!,
+            ownerPlayerId: ownerPlayerId,
+            chunkWidth: chunkWidth,
+            players: playersData,
+            chunks: {},
+            generatedInVersion: gameVersion
+        }
+
+        for (const chunkIndex in this.props.chunks) {
+            const chunk = this.props.chunks[chunkIndex]
+            const chunkData = chunk.getData()
+            worldData.chunks[chunkIndex] = chunkData
+        }
+
+        const dataText = JSON.stringify(worldData)
+        
+        exportFile({ content: dataText, fileName: fileName })
+    }
 
     public getBlockAt(chunkIndex: number, blockIndex: number): Block | undefined {
         const chunk = this.props.chunks[chunkIndex]
@@ -74,7 +140,17 @@ class World {
 
     public addEntity(entity: Entity, coordinates: Coordinates): void {}
 
-    public addPlayer(player: Player, coordinates: Coordinates): void {}
+    public addPlayer(player: Player, coordinates: Coordinates, isOwner?: boolean): void {
+        if (isOwner) {
+            if (this.props.ownerPlayerId) {
+                throw new Error(`This world already has an owner, the owner's ID is: ${this.props.ownerPlayerId}`)
+            }
+
+            this.props.ownerPlayerId = player.id
+        }
+
+        this.props.players.push(player)
+    }
 
     public subscribe(observer: Observer): void {
         this.observers.push(observer)

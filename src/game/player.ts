@@ -1,4 +1,5 @@
-import { defaultMoveSpeed, playerSpawnCoord } from "../game-config"
+import { defaultMoveSpeed } from "../game-config"
+import randomUUID from "../utils/id-generator"
 import Camera from "./camera"
 
 type Position = {
@@ -6,13 +7,30 @@ type Position = {
     y: number
 }
 
+enum MovementDirections {
+    LEFT = "LEFT",
+    RIGHT =  "RIGHT"
+}
+
+type MovementDirectionType = keyof typeof MovementDirections | string
+
 export type PlayerProps = {
-    camera: Camera,
+    camera: Camera
     position: Position
     skin: HTMLImageElement
     isClimbing: boolean
     isFalling: boolean
-    lastJump: number
+    isHurt: boolean
+    isJumping: boolean
+    lastJumpTime: number
+    currentMovementDirection: MovementDirectionType
+
+    currentHealthPoints?: number
+    healthPoints?: number
+    currentSaturationPoints?: number
+    saturationPoints?: number
+    inventorySlots?: []
+    selectedInventorySlotIndex?: number
 }
 
 enum PlayerEvents {
@@ -66,28 +84,60 @@ type PlayerPartialProps = Omit<
     "position" |
     "isClimbing" | 
     "isFalling" | 
-    "lastJump"
+    "isJumping" |
+    "isHurt" |
+    "lastJumpTime" | 
+    "currentMovementDirection"
 >
 
+const defaultProps = {
+    isClimbing: false,
+    isFalling: false,
+    isJumping: false,
+    isHurt: false,
+    lastJumpTime: 0,
+    position: {
+        x: 0,
+        y: 0
+    },
+    currentMovementDirection: MovementDirections.LEFT
+}
+
+export type PlayerData = {
+    id: string
+    position: Position
+    isClimbing: boolean
+    isFalling: boolean
+    isHurt: boolean
+    isJumping: boolean
+    lastJumpTime: number
+    currentMovementDirection: MovementDirectionType
+    currentHealthPoints: number
+    healthPoints: number
+    currentSaturationPoints: number
+    saturationPoints: number
+    inventorySlots: []
+    selectedInventorySlotIndex: number
+}
+
 class Player {
+    public id: string
     public props: PlayerProps
     private observers: Observer[] = []
 
-    public constructor(props: PlayerPartialProps) {
-        const playerInitialPosition = {...playerSpawnCoord}
+    public constructor(props: PlayerPartialProps, id?: string) {
+        this.id = id ?? randomUUID()
 
         const camera = new Camera({
-            offset: playerInitialPosition,
+            offset: { x: 0, y: 0 },
             moveSpeed: defaultMoveSpeed
         })
 
         this.props = {
             ...props,
+            ...defaultProps,
             position: camera.props.offset,
-            camera: camera,
-            isClimbing: false,
-            isFalling: false,
-            lastJump: 0
+            camera: camera
         }
     }
 
@@ -121,6 +171,27 @@ class Player {
 
     public die() {
         this.notifyAll("die")
+    }
+
+    public getData(): PlayerData {
+        const data: PlayerData = {
+            id: this.id,
+            position: this.props.position,
+            isClimbing: this.props.isClimbing,
+            isFalling: this.props.isFalling,
+            isHurt: this.props.isHurt,
+            isJumping: this.props.isJumping,
+            lastJumpTime: this.props.lastJumpTime,
+            currentMovementDirection: this.props.currentMovementDirection,
+            currentHealthPoints: this.props.currentHealthPoints ?? 0,
+            healthPoints: this.props.healthPoints ?? 0,
+            currentSaturationPoints: this.props.currentSaturationPoints ?? 0,
+            saturationPoints: this.props.saturationPoints ?? 0,
+            inventorySlots: this.props.inventorySlots ?? [],
+            selectedInventorySlotIndex: this.props.selectedInventorySlotIndex ?? 0,
+        }
+
+        return data
     }
 
     public subscribe(observer: Observer) {

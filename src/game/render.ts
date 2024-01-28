@@ -1,7 +1,9 @@
 import SplashMessageManager from "./splash-message-manager"
+import { worldSize, gameVersion } from "./../game-config"
 import CanvasButton from "../utils/canvas-ui/button"
 import { Resource } from "./resource-loader"
 import Game from "./index"
+
 import {
     blockSize, chunksRenderedByDirection,
     chunkWidth, playerSize, screenSize,
@@ -640,8 +642,8 @@ class GameRender {
 
         function drawSplashMessage() {
             const splashMessage = gameContext.splashMessageManager.getCurrentMessage();
-            const x = 1000;
-            const y = 160;
+            const x = 1000
+            const y = 160
         
             const animationDuration = 750
             const minFontSize = 22
@@ -714,7 +716,7 @@ class GameRender {
         }
 
         function drawGameVersion() {
-            const text = "v0.1"
+            const text = `v${gameVersion}`
             const fontSize = 20
 
             const x = $canvas.width - (fontSize / 2)
@@ -836,6 +838,36 @@ class GameRender {
             drawProgressBarBackground()
             drawProgressBar()
         }
+
+        function drawCoordinates() {
+            const camera = game.props.player.props.camera
+            const coordX = Math.floor(camera.props.offset.x / blockSize.width / visionScale)
+            const coordY = (worldSize.height - Math.floor(camera.props.offset.y / blockSize.height / visionScale)) - 20
+
+            const text = `X: ${coordX}, Y: ${coordY}`
+
+            const x = 10
+            const y = 40
+
+            ctx.fillStyle = "#00000050"
+
+            ctx.fillRect(
+                0,
+                0,
+                145,
+                50
+            )
+
+            ctx.textAlign = "left"
+            ctx.fillStyle = "#fff"
+            ctx.font = "15px Minecraft"
+
+            ctx.fillText(
+                text,
+                x,
+                y
+            )
+        }
         
         clearScreen()
 
@@ -872,6 +904,7 @@ class GameRender {
                 drawDefaultBackground()
         }
 
+        drawCoordinates()
         this.drawFps(ctx)
 
         if (this.isRunning) {
