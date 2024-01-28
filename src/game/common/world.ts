@@ -1,11 +1,12 @@
-import Chunk, { ChunkData, getBlockByType } from "./chunk"
-import randomUUID from "../utils/id-generator"
-import WorldGenerator from "./world-generator"
-import exportFile from "../utils/export-file"
+import WorldGenerator from "../core/world-generator"
+import randomUUID from "../../utils/id-generator"
+import exportFile from "../../utils/export-file"
+import { gameVersion } from "../settings/index"
+import { getBlockPropsByType } from "../helper"
+import Chunk, { ChunkData } from "./chunk"
 import Player from "./player"
 import Entity from "./entity"
 import Block from "./block"
-import { gameVersion } from "../game-config"
 
 type Chunks = {
     [key: number]: Chunk
@@ -83,7 +84,7 @@ class World {
             const chunkData = data.chunks[chunkIndex]
 
             const blocks = chunkData.blockTypes.map(blockType => {
-                const blockProps = getBlockByType(blockType)
+                const blockProps = getBlockPropsByType(blockType)
                 const block = new Block(blockProps)
                 return block
             })

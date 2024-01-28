@@ -1,5 +1,5 @@
-import { defaultMoveSpeed } from "../game-config"
-import randomUUID from "../utils/id-generator"
+import { defaultPlayerMoveSpeed } from "../settings/index"
+import randomUUID from "../../utils/id-generator"
 import Camera from "./camera"
 
 type Position = {
@@ -130,7 +130,7 @@ class Player {
 
         const camera = new Camera({
             offset: { x: 0, y: 0 },
-            moveSpeed: defaultMoveSpeed
+            moveSpeed: defaultPlayerMoveSpeed
         })
 
         this.props = {

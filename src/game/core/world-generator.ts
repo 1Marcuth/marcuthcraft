@@ -1,10 +1,12 @@
-import { chunkWidth, maxChunksToLeft, maxChunksToRight, startChunkIndex, worldSize } from "./../game-config"
-import { biomeGenerationSettings, BlockTypes } from "./settings"
-import Chunk, { ChunkProps, getBlockByType } from "./chunk"
+import { chunkWidth, maxChunksToLeft, maxChunksToRight, worldSize } from "../settings/index"
+import { biomeGenerationSettings } from "../settings/generation"
+import { BlockTypes } from "../settings/enum-types"
+import Chunk, { ChunkProps } from "../common/chunk"
+import { getBlockPropsByType } from "../helper"
+import ChunkGenerator from "./chunk-generator"
 import Noise from "../utils/noise"
 import PRNG from "../utils/prng"
-import Block from "./block"
-import ChunkGenerator from "./chunk-generator"
+import Block from "../common/block"
 
 enum WorldGeneratorEvents {
     startedGeneration,
@@ -62,7 +64,7 @@ class WorldGenerator {
 
     private generateChunkProps(index: number, biomeType: string, terrainHeightNoise: number[]): ChunkProps {
         const firstChunkIndex = 0
-        const lastChunkIndex = startChunkIndex + maxChunksToRight
+        const lastChunkIndex = maxChunksToLeft + 1 + maxChunksToRight
         
         const borders = {
             left: index === firstChunkIndex,
@@ -137,7 +139,7 @@ class WorldGenerator {
                     cavesNoise[x][y] === 0 &&
                     currentBlockType !== BlockTypes.BEDROCK
                 ) {
-                    const blockProps = getBlockByType(BlockTypes.AIR)
+                    const blockProps = getBlockPropsByType(BlockTypes.AIR)
                     chunks[chunkIndex].props.data[blockIndex] = new Block(blockProps)
                 }
             }
@@ -214,7 +216,7 @@ class WorldGenerator {
                     })()
     
                     if (isOreSpace && isInLayerRange && isAReplaceableBlock) {                        
-                        const blockProps = getBlockByType(oreSettings.blockType)
+                        const blockProps = getBlockPropsByType(oreSettings.blockType)
                         chunks[chunkIndex].props.data[blockIndex] = new Block(blockProps)
                     }
                 }

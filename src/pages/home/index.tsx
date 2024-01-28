@@ -1,18 +1,28 @@
 import { FC, useEffect, useState } from "react"
 
-import { screenSize, splashMessageIntervalTime, splashMessages } from "../../game-config"
-import ResourceLoader, { Resource } from "../../game/resource-loader"
-import SplashMessageManager from "../../game/splash-message-manager"
-import GameRender, { GameRenderNewProps } from "../../game/render"
-import { wait } from "@testing-library/user-event/dist/utils"
-import Player, { getPlayerAction } from "../../game/player"
+import {
+    autoplaySoundtrack,
+    screenSize,
+    soundtrackVolume,
+    splashMessageIntervalTime,
+    splashMessages,
+    worldFileExtension,
+    worldGenerationStageNames
+} from "../../game/settings/index"
+
+import { worldGenerationStepsCount } from "../../game/core/world-generator"
+import ResourceLoader, { Resource } from "../../game/utils/resource-loader"
+import SplashMessageManager from "../../game/utils/splash-message-manager"
 import KeyboardListener, { ModifierKeys } from "../../keyboard-listener"
+import GameRender, { GameRenderNewProps } from "../../game/utils/render"
+import Player, { getPlayerAction } from "../../game/common/player"
+import { wait } from "@testing-library/user-event/dist/utils"
 import GameScreen from "../../components/game-screen"
+import resources from "../../game/resources"
+import World from "../../game/common/world"
 import Game from "../../game"
 
 import styles from "./style.module.scss"
-import { worldGenerationStepsCount } from "../../game/world-generator"
-import World from "../../game/world"
 
 const HomePage: FC = () => {
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
@@ -32,34 +42,35 @@ const HomePage: FC = () => {
             stagesCompleted: 0
         }
 
+        async function handleWorldFileChange(event: Event): Promise<void> {
+            const fileInput = event.target as HTMLInputElement
+            if (!fileInput || !fileInput.files) return
+            const worldFile = fileInput.files[0]
+            game.props.world = new World({})
+            await game.props.world.import(worldFile)
+            gameRender.setProps({ currentScreen: "world" })
+        }
+
         async function handleKeyPressed(
             keyPressed: string,
             modifierKeys: ModifierKeys,
             player: Player,
             currentScreen?: string
-        ) {
-            console.log({keyPressed, modifierKeys})
-
+        ): Promise<void> {
             if (modifierKeys.ctrl && keyPressed === "KeyE") {
-                game.props.world!.export("meu_mundo.mccworld")
+                if (game.props.world) {
+                    game.props.world.export(`meu_mundo${worldFileExtension}`)
+                } else {
+                    alert("Nenhum mundo foi encontrado!")
+                }
             }
 
             if (modifierKeys.ctrl && keyPressed === "KeyI") {
                 const fileInput = document.createElement("input")
-
                 fileInput.type = "file"
-                fileInput.accept = ".mccworld"
-
-                fileInput.onchange = async (event) => {
-                    if (!fileInput.files) return
-                    const worldFile = fileInput.files[0]
-                    console.log("Importando mundo...")
-                    game.props.world = new World({})
-                    await game.props.world.import(worldFile)
-                    gameRender.setProps({ currentScreen: "world" })
-                }
-
+                fileInput.accept = worldFileExtension
                 fileInput.click()
+                fileInput.addEventListener("change", handleWorldFileChange)
             }
 
             if (currentScreen === "world") {
@@ -74,101 +85,61 @@ const HomePage: FC = () => {
         async function playSoundtrack(soundtrack: HTMLAudioElement): Promise<any> {
             try {
                 soundtrack.loop = true
-                soundtrack.volume = .3
-                // await soundtrack.play()
+                soundtrack.volume = soundtrackVolume
+                await soundtrack.play()
             } catch(error) {
                 await wait(1000)
                 return await playSoundtrack(soundtrack)
             }
         }
 
-        const playerSkin = new Image()
+        function handleGameRenderEvents(event: string, ...args: any[]): void {
+            if (event === "widgetClick") {
+                const buttonKey = args[0]
 
-        const player = new Player({ skin: playerSkin })
+                switch (buttonKey) {
+                    case "mainMenu.singlePlayerButton":
+                        gameRender.setProps({ currentScreen: "generatingWorld" })
+                        game.createWorld(game.props.player)
+                        break
+                    
+                    case "mainMenu.CreditsButton":
+                        break
 
-        const keyboardListener = new KeyboardListener(document)
+                    case "mainMenu.OptionsButton":
+                        break
 
-        const game = new Game({
-            player: player,
-            worldGenerationProgress: worldGenerationProgress,
-        })
-
-        const resourceLoader = new ResourceLoader({ resources: [
-            {
-                resourceObject: new Image(),
-                source: require("../../assets/img/logo-intro.png"),
-                key: "logoIntro"
-            },
-            {
-                resourceObject: new Image(),
-                source: require("../../assets/img/sprites.png"),
-                key: "textureSprites"
-            },
-            {
-                loadEventName: "loadeddata",
-                resourceObject: new Audio(),
-                source: require("../../assets/aud/soundtrack.mp3"),
-                key: "music1"
-            },
-            {
-                resourceObject: playerSkin,
-                source: require("../../assets/img/skins/steve.png"),
-                key: "playerSkin"
-            },
-            {
-                resourceObject: new Image(),
-                source: require("../../assets/img/logo.png"),
-                key: "logo"
-            },
-            {
-                resourceObject: new Image(),
-                source: require("../../assets/img/main-menu-background-layers/2.png"),
-                key: "backgroundLayerTwo"
-            },
-            {
-                resourceObject: new Image(),
-                source: require("../../assets/img/widgets.png"),
-                key: "widgets"
-            },
-            {
-                resourceObject: new Image(),
-                source: require("../../assets/img/main-menu-background-layers/blur.png"),
-                key: "backgroundBlur"
-            },
-            {
-                resourceObject: new Image(),
-                source: require("../../assets/img/options-background.png"),
-                key: "optionsBackground"
+                    default:
+                        throw new Error(`Not found button key: ${buttonKey}`)
+                }
             }
-        ] })
-
-        const splashMessageManager = new SplashMessageManager({
-            messages: splashMessages,
-            intervalTime: splashMessageIntervalTime
-        })
-
-        const gameContext = {
-            splashMessageManager: splashMessageManager,
-            getWorldGenerationProgress: () => worldGenerationProgress,
-            getLoadedResources: () => loadedResources,
-            amountOfResources: resourceLoader.props.resources.length
         }
 
-        const gameRender = new GameRender({
-            $canvas: canvas,
-            game: game,
-            gameContext: gameContext,
-            images: {},
-            requestAnimationFrame: requestAnimationFrame
-        })
+        async function handleGameEvents(sender: string, event: string, ...args: any[]): Promise<void> {
+            if (sender === "WorldGenerator") {
+                if (event === "startedGeneration") {
+                    worldGenerationProgress.stagesCompleted = 0
+                    worldGenerationProgress.totalStages = worldGenerationStepsCount
+                    worldGenerationProgress.currentStageName = "Gerando Chunks..."
+                } else if (event === "finishedGeneration") {
+                    worldGenerationProgress.currentStageName = "Pronto!"
+                    await wait(600)
+                    gameRender.setProps({ currentScreen: "world" })
+                } else {
+                    const stageName = worldGenerationStageNames[worldGenerationProgress.stagesCompleted] || "Gerando Terreno..."
+                    worldGenerationProgress.stagesCompleted++
+                    worldGenerationProgress.currentStageName = stageName
+                }
+            }
+        }
 
-        resourceLoader.subscribe(async (event, ...args) => {
+        async function handleResourceLoaderEvents(event: string, ...args: any[]): Promise<void> {
             if (event === "loadedResource") {
                 const resource: Resource = args[0]
 
                 loadedResources.push(resource)
 
-                if (resource.key === "music1") {
+                if (resource.key === "music1" && autoplaySoundtrack) {
                     const soundtrack = resource.resourceObject
                     await playSoundtrack(soundtrack)
                 } else if (resource.resourceObject instanceof HTMLImageElement) {
@@ -200,54 +171,36 @@ const HomePage: FC = () => {
                     gameRender.props.currentScreen
                 ))
             }
+        }
+
+        const player = new Player({ skin: new Image() })
+        const game = new Game({ player: player })
+        const resourceLoader = new ResourceLoader({ resources: resources })
+        const keyboardListener = new KeyboardListener(document)
+
+        const splashMessageManager = new SplashMessageManager({
+            messages: splashMessages,
+            intervalTime: splashMessageIntervalTime
         })
 
-        game.subscribe(async (sender, event, ...args) => {
-            if (sender === "WorldGenerator") {
-                if (event === "startedGeneration") {
-                    worldGenerationProgress.stagesCompleted = 0
-                    worldGenerationProgress.totalStages = worldGenerationStepsCount
-                    worldGenerationProgress.currentStageName = "Gerando Chunks..."
-                } else if (event === "finishedGeneration") {
-                    worldGenerationProgress.currentStageName = "Pronto!"
-                    await wait(600)
-                    gameRender.setProps({ currentScreen: "world" })
-                } else {
-                    const stageNames: { [key: number]: string } = {
-                        1: "Gerando Chunks",
-                        2: "Gerando Minérios",
-                        3: "Gerando Cavernas"
-                    }
+        const gameContext = {
+            splashMessageManager: splashMessageManager,
+            worldGenerationProgress: worldGenerationProgress,
+            loadedResources: loadedResources,
+            amountOfResources: resourceLoader.props.resources.length
+        }
 
-                    const stageName = stageNames[worldGenerationProgress.stagesCompleted] || "Gerando Terreno..."
-
-                    worldGenerationProgress.stagesCompleted++
-                    worldGenerationProgress.currentStageName = stageName
-                }
-            }
+        const gameRender = new GameRender({
+            $canvas: canvas,
+            game: game,
+            gameContext: gameContext,
+            images: {},
+            requestAnimationFrame: requestAnimationFrame
         })
 
-        gameRender.subscribe((event, ...args) => {
-            if (event === "widgetClick") {
-                const buttonKey = args[0]
-
-                switch (buttonKey) {
-                    case "mainMenu.singlePlayerButton":
-                        gameRender.setProps({ currentScreen: "generatingWorld" })
-                        game.createWorld(game.props.player)
-                        break
-                    
-                    case "mainMenu.CreditsButton":
-                        break
-
-                    case "mainMenu.OptionsButton":
-                        break
-
-                    default:
-                        throw new Error(`Not found button key: ${buttonKey}`)
-                }
-            }
-        })
+        game.subscribe(handleGameEvents)
+        gameRender.subscribe(handleGameRenderEvents)
+        resourceLoader.subscribe(handleResourceLoaderEvents)
 
         resourceLoader.load()
         gameRender.run()

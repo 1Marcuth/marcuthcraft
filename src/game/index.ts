@@ -1,22 +1,14 @@
-import Player from "./player"
-import World from "./world"
-
-type WorldGenerationProgress = {
-    totalStages: number
-    stagesCompleted: number
-    currentStageName: string
-}
+import Player from "./common/player"
+import World from "./common/world"
 
 export type GameProps = {
     player: Player
     world?: World
-    worldGenerationProgress: WorldGenerationProgress
 }
 
 type GamePartialProps = {
     player: Player
     world?: World
-    worldGenerationProgress: WorldGenerationProgress
 }
 
 type Observer = (sender: string, eventType: string, ...args: any[]) => any

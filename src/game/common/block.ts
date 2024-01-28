@@ -1,4 +1,4 @@
-import isNumber from "../utils/is-number"
+import isNumber from "../../utils/is-number"
 
 type Clipping = {
     x: number,

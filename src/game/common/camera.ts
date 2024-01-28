@@ -1,4 +1,4 @@
-import { defaultMoveSpeed } from "./../game-config"
+import { defaultPlayerMoveSpeed } from "../settings/index"
 
 type Offset = {
     x: number
@@ -24,7 +24,7 @@ class Camera {
     public constructor(props: CameraProps) {
         this.props = {
             ...props,
-            moveSpeed: props.moveSpeed ?? defaultMoveSpeed
+            moveSpeed: props.moveSpeed ?? defaultPlayerMoveSpeed
         }
     }
 

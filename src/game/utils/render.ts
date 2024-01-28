@@ -1,14 +1,19 @@
-import SplashMessageManager from "./splash-message-manager"
-import { worldSize, gameVersion } from "./../game-config"
-import CanvasButton from "../utils/canvas-ui/button"
-import { Resource } from "./resource-loader"
-import Game from "./index"
-
 import {
-    blockSize, chunksRenderedByDirection,
-    chunkWidth, playerSize, screenSize,
-    visionScale
-} from "../game-config"
+    blockSize,
+    chunksRenderDistance,
+    chunkWidth,
+    playerSize,
+    screenSize,
+    playerVisionScale,
+    worldSize,
+    gameVersion
+} from "../settings/index"
+
+import SplashMessageManager from "./splash-message-manager"
+import CanvasButton from "../ui/button"
+import { Resource } from "./resource-loader"
+import Game from "../index"
+
 
 type RequestAnimationFrameFunction = typeof requestAnimationFrame
 
@@ -32,8 +37,8 @@ type WorldGenerationProgress = {
 }
 
 type GameContext = {
-    getWorldGenerationProgress(): WorldGenerationProgress
-    getLoadedResources: () => Resource[]
+    worldGenerationProgress: WorldGenerationProgress
+    loadedResources: Resource[]
     splashMessageManager: SplashMessageManager
     amountOfResources: number
 }
@@ -181,18 +186,18 @@ class GameRender {
             const cameraY = camera.props.offset.y
             const chunks = game.props.world!.props.chunks
             const chunksAmount = Object.keys(chunks).length
-            const currentChunkIndex = Math.floor(cameraX / (chunkWidth * blockSize.width * visionScale))
+            const currentChunkIndex = Math.floor(cameraX / (chunkWidth * blockSize.width * playerVisionScale))
     
-            const startChunkIndex = Math.max(0, currentChunkIndex - chunksRenderedByDirection)
-            const endChunkIndex = Math.min(chunksAmount - 1, currentChunkIndex + chunksRenderedByDirection)
+            const startChunkIndex = Math.max(0, currentChunkIndex - chunksRenderDistance)
+            const endChunkIndex = Math.min(chunksAmount - 1, currentChunkIndex + chunksRenderDistance)
     
             for (let chunkIndex = startChunkIndex; chunkIndex <= endChunkIndex; chunkIndex++) {
                 const chunk = chunks[chunkIndex]
         
                 for (let blockIndex = 0; blockIndex < chunk.props.data.length; blockIndex++) {
                     const block = chunk.props.data[blockIndex]
-                    const x = ((blockIndex % chunkWidth) * blockSize.width + chunkIndex * chunkWidth * blockSize.width) * visionScale
-                    const y = (Math.floor(blockIndex / chunkWidth) * blockSize.height) * visionScale
+                    const x = ((blockIndex % chunkWidth) * blockSize.width + chunkIndex * chunkWidth * blockSize.width) * playerVisionScale
+                    const y = (Math.floor(blockIndex / chunkWidth) * blockSize.height) * playerVisionScale
         
                     if (block.props.clipping) {
                         const blockSpriteX = block.props.clipping.x
@@ -210,8 +215,8 @@ class GameRender {
                             blockClippingHeight,
                             blockX,
                             blockY,
-                            blockSize.width * visionScale,
-                            blockSize.height * visionScale
+                            blockSize.width * playerVisionScale,
+                            blockSize.height * playerVisionScale
                         )
                     }
                 }
@@ -227,8 +232,8 @@ class GameRender {
             ctx.fillRect(
                 playerX,
                 playerY,
-                playerSize.width * visionScale,
-                playerSize.height * visionScale
+                playerSize.width * playerVisionScale,
+                playerSize.height * playerVisionScale
             )   
         }
     
@@ -243,7 +248,7 @@ class GameRender {
         }
     
         function drawResourcesLoadingBar() {
-            const resourcesLoaded = gameContext.getLoadedResources().length
+            const resourcesLoaded = gameContext.loadedResources.length
             const progress = (resourcesLoaded / gameContext.amountOfResources) * 100
             const maxProgressBarWidth = 600
             const progressBarHeight = 15
@@ -304,7 +309,7 @@ class GameRender {
         }
     
         function drawResourcesLoadingTitle() {
-            const loadedResources = gameContext.getLoadedResources()
+            const loadedResources = gameContext.loadedResources
             const loadedResourcesAmount = loadedResources.length
             const lastLoadedResource = loadedResources[loadedResources.length - 1]
             const lastLoadedResourceName = lastLoadedResource.source
@@ -782,7 +787,7 @@ class GameRender {
         }
 
         function drawWorldGenerationStage() {
-            const worldGenerationProgress = gameContext.getWorldGenerationProgress()
+            const worldGenerationProgress = gameContext.worldGenerationProgress
             const stageName = worldGenerationProgress.currentStageName
             const text = `[${worldGenerationProgress.stagesCompleted}/${worldGenerationProgress.totalStages}] ${stageName}`
 
@@ -801,8 +806,7 @@ class GameRender {
         }
 
         function drawWorldGenerationProgressBar() {
-            const worldGenerationProgress = gameContext.getWorldGenerationProgress()
-            
+            const worldGenerationProgress = gameContext.worldGenerationProgress
             const progress = worldGenerationProgress.stagesCompleted / worldGenerationProgress.totalStages
 
             const progressBarMaxWidth = 250
@@ -841,8 +845,8 @@ class GameRender {
 
         function drawCoordinates() {
             const camera = game.props.player.props.camera
-            const coordX = Math.floor(camera.props.offset.x / blockSize.width / visionScale)
-            const coordY = (worldSize.height - Math.floor(camera.props.offset.y / blockSize.height / visionScale)) - 20
+            const coordX = Math.floor(camera.props.offset.x / blockSize.width / playerVisionScale)
+            const coordY = (worldSize.height - Math.floor(camera.props.offset.y / blockSize.height / playerVisionScale)) - 20
 
             const text = `X: ${coordX}, Y: ${coordY}`
 

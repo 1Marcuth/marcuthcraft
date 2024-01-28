@@ -1,8 +1,9 @@
-import { ChunkProps, getBiomeSettingsByType, getBlockByType } from "./chunk"
-import { BlockTypes } from "./settings"
+import { getBiomeSettingsByType, getBlockPropsByType } from "../helper"
+import { BlockTypes } from "../settings/enum-types"
+import { worldSize } from "../settings/index"
+import { ChunkProps } from "../common/chunk"
 import PRNG from "../utils/prng"
-import Block from "./block"
-import { worldSize } from "../game-config"
+import Block from "../common/block"
 
 type Borders = {
     left?: boolean
@@ -85,7 +86,7 @@ class ChunkGenerator {
             noiseHeight: noiseHeight
         })
     
-        const selectedBlock = getBlockByType(selectedBlockType)
+        const selectedBlock = getBlockPropsByType(selectedBlockType)
         const lowerBlockIndex = index - chunkGenerator.props.width
         const lowerBlock = chunkGenerator.props.data[lowerBlockIndex]
     
