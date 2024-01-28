@@ -19,10 +19,11 @@ export enum BlockTypes {
     OAK_LEAF = "OAK_LEAF",
     AIR = "AIR",
     WATER = "WATER",
-    LAVA = "LAVA",
+    LAVA = "LAVA"
 }
 
-type AlternativeBlockType = string
+type BiomeType = string | keyof typeof BiomeTypes
+type BlockType = string | keyof typeof BlockTypes
 
 type NoiseVariation = {
     strength: number
@@ -31,20 +32,36 @@ type NoiseVariation = {
 
 type SpawnVariationLayer = {
     layerRange: [number, number]
-    alternativeBlocks: AlternativeBlockType[]
+    alternativeBlocks: BlockType[]
     spawnChance: number
     noiseVariation?: NoiseVariation
 }
 
 type BlockLayer = {
     layerRange: [number, number]
-    blockType: string
+    blockType: BlockType
     spawnVariationLayers?: SpawnVariationLayer[]
 }
 
+type SpawnOreMaxLayerHeight = number | "biomeMaxHeight"
+
+type ReplaceableBlocks = BlockType[] | "*"
+type UnreplaceableBlocks = BlockType[]
+
+type Ore = {
+    spawnLayerRange: [number, SpawnOreMaxLayerHeight]
+    noiseDensity: number
+    cellularAutomatonIterations: number
+    blockType: BlockType
+    replaceableBlocks?: ReplaceableBlocks
+    unreplaceableBlocks?: UnreplaceableBlocks
+}
+
 type BiomeGenerationSettings = {
-    type: string
+    type: BiomeType
     spawnChance: number
+    maxHeight: number
+    ores: Ore[]
     blockLayers: BlockLayer[]
 }
 
@@ -52,6 +69,7 @@ const biomeGenerationSettings: BiomeGenerationSettings[] = [
     {
         type: BiomeTypes.MOUNTAIN,
         spawnChance: .1,
+        maxHeight: 128,
         blockLayers: [
             {
                 layerRange: [ 0, 4 ],
@@ -98,26 +116,6 @@ const biomeGenerationSettings: BiomeGenerationSettings[] = [
                             strength: 0.1,
                             scale: 0.05,
                         }
-                    },
-                    {
-                        layerRange: [ 20, 80 ],
-                        spawnChance: 0.01806640625,
-                        alternativeBlocks: [ BlockTypes.COAL_ORE ]
-                    },
-                    {
-                        layerRange: [ 10, 80 ],
-                        spawnChance: 0.01953125,
-                        alternativeBlocks: [ BlockTypes.IRON_ORE ]
-                    },
-                    {
-                        layerRange: [ 6, 30 ],
-                        spawnChance: 0.0143,
-                        alternativeBlocks: [ BlockTypes.GOLD_ORE ]
-                    },
-                    {
-                        layerRange: [ 5, 18 ],
-                        spawnChance: 0.0029296875,
-                        alternativeBlocks: [ BlockTypes.DIAMOND_ORE ]
                     }
                 ]
             },
@@ -125,96 +123,43 @@ const biomeGenerationSettings: BiomeGenerationSettings[] = [
                 layerRange: [ 81, 90 ],
                 blockType: BlockTypes.DIRT,
             }
-        ]
-    },
-    /*{
-        type: BiomeTypes.FOREST,
-        spawnChance: .2,
-        blockLayers: [
+        ],
+        ores: [
             {
-                layerRange: [ 0, 4 ],
-                blockType: BlockTypes.BEDROCK,
-                spawnVariationLayers: [
-                    {
-                        layerRange: [ 2, 3 ],
-                        spawnChance: 0.5,
-                        alternativeBlocks: [ BlockTypes.STONE ],
-                        noiseVariation: {
-                            strength: 0.2,
-                            scale: 0.1,
-                        }
-                    },
-                    {
-                        layerRange: [ 3, 4 ],
-                        spawnChance: 0.25,
-                        alternativeBlocks: [ BlockTypes.STONE ],
-                        noiseVariation: {
-                            strength: 0.2,
-                            scale: 0.1,
-                        }
-                    }
-                ]
-            },
-            {
-                layerRange: [ 5, 60 ],
-                blockType: BlockTypes.STONE,
-                spawnVariationLayers: [
-                    {
-                        layerRange: [ 58, 59 ],
-                        spawnChance: 0.25,
-                        alternativeBlocks: [ BlockTypes.DIRT ],
-                        noiseVariation: {
-                            strength: 0.1,
-                            scale: 0.05,
-                        }
-                    },
-                    {
-                        layerRange: [ 59, 60 ],
-                        spawnChance: 0.5,
-                        alternativeBlocks: [ BlockTypes.DIRT ],
-                        noiseVariation: {
-                            strength: 0.1,
-                            scale: 0.05,
-                        }
-                    }
-                ]
-            },
-            {
-                layerRange: [ 61, 65 ],
-                blockType: BlockTypes.DIRT,
-            },
-            {
-                layerRange: [ 10, 40 ],
-                blockType: BlockTypes.IRON_ORE,
-                spawnVariationLayers: [
-                    {
-                        layerRange: [ 20, 30 ],
-                        spawnChance: 0.3,
-                        alternativeBlocks: [ BlockTypes.STONE ],
-                        noiseVariation: {
-                            strength: 0.1,
-                            scale: 0.05,
-                        }
-                    }
-                ]
-            },
-            {
-                layerRange: [ 30, 50 ],
+                spawnLayerRange: [ 20, "biomeMaxHeight" ],
                 blockType: BlockTypes.COAL_ORE,
-                spawnVariationLayers: [
-                    {
-                        layerRange: [ 40, 45 ],
-                        spawnChance: 0.2,
-                        alternativeBlocks: [ BlockTypes.STONE ],
-                        noiseVariation: {
-                            strength: 0.1,
-                            scale: 0.05,
-                        }
-                    }
+                noiseDensity: .67,
+                cellularAutomatonIterations: 1,
+                replaceableBlocks: [ BlockTypes.STONE ]
+            },
+            {
+                spawnLayerRange: [ 20, "biomeMaxHeight" ],
+                blockType: BlockTypes.IRON_ORE,
+                noiseDensity: .67,
+                cellularAutomatonIterations: 1,
+                replaceableBlocks: [ BlockTypes.STONE, BlockTypes.COAL_ORE ]
+            },
+            {
+                spawnLayerRange: [ 0, 45 ],
+                blockType: BlockTypes.GOLD_ORE,
+                noiseDensity: .64,
+                cellularAutomatonIterations: 4,
+                replaceableBlocks: [ BlockTypes.STONE, BlockTypes.COAL_ORE, BlockTypes.IRON_ORE ]
+            },
+            {
+                spawnLayerRange: [ 0, 18 ],
+                blockType: BlockTypes.DIAMOND_ORE,
+                noiseDensity: .64,
+                cellularAutomatonIterations: 3,
+                replaceableBlocks: [
+                    BlockTypes.STONE,
+                    BlockTypes.COAL_ORE,
+                    BlockTypes.IRON_ORE,
+                    BlockTypes.GOLD_ORE
                 ]
             }
         ]
-    }*/
+    }
 ]
 
 export { biomeGenerationSettings }

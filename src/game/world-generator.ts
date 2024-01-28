@@ -1,6 +1,6 @@
 import { chunkWidth, maxChunksToLeft, maxChunksToRight, startChunkIndex, worldSize } from "./../game-config"
 import { biomeGenerationSettings, BlockTypes } from "./settings"
-import Chunk, { ChunkPartialProps } from "./chunk"
+import Chunk, { ChunkPartialProps, getBlockByType } from "./chunk"
 import Noise from "../utils/noise"
 import PRNG from "../utils/prng"
 import Block from "./block"
@@ -8,6 +8,7 @@ import Block from "./block"
 enum WorldGeneratorEvents {
     startedGeneration,
     generatedChunks,
+    generatedCaves,
     finishedGeneration
 }
 
@@ -111,11 +112,11 @@ class WorldGenerator {
         const seed = typeof this.seed === "number" ? this.seed : PRNG.stringToSeed(this.seed)
 
         const cavesNoise = Noise.generateCavesMap({
-            seed: seed,
+            seed: seed + this.prng.next(),
             height: worldSize.height,
             width: worldSize.width,
             density: .53,
-            iterations: 5
+            iterations: 10
         })
 
         for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
@@ -130,9 +131,7 @@ class WorldGenerator {
 
                 if (
                     cavesNoise[x][y] === 0 &&
-                    currentBlockType != BlockTypes.BEDROCK &&
-                    currentBlockType != BlockTypes.DIRT &&
-                    currentBlockType != BlockTypes.GRASS
+                    currentBlockType !== BlockTypes.BEDROCK
                 ) {
                     chunks[chunkIndex].props.data[blockIndex] = new Block({
                         name: "Ar",
@@ -142,12 +141,92 @@ class WorldGenerator {
                 }
             }
         }
+
+        this.notifyAll("generatedChunks")
+    }
+
+    private generateOres(chunks: Chunk[]): void {
+        const seed = typeof this.seed === "number" ? this.seed : PRNG.stringToSeed(this.seed)
+
+        for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+            const chunk = chunks[chunkIndex]
+            const chunkBiome = chunk.props.biomeType
+
+            const biomeSettings = biomeGenerationSettings.find(biomeSettings => biomeSettings.type === chunkBiome)
+
+            if (!biomeSettings) {
+                throw new Error(`Not found biome configuration of biome: ${chunkBiome}`)
+            }
+
+            for (const oreSettings of biomeSettings.ores) {
+                const layerRange = oreSettings.spawnLayerRange
+
+                const oresNoise = Noise.generateOresMap({
+                    seed: seed + this.prng.next(),
+                    height: worldSize.height,
+                    width: chunkWidth,
+                    density: oreSettings.noiseDensity,
+                    iterations: oreSettings.cellularAutomatonIterations
+                })
+
+                for (let blockIndex = 0; blockIndex < chunkWidth * worldSize.height; blockIndex++) {
+                    const x = blockIndex % chunkWidth
+                    const y = Math.floor(blockIndex / chunkWidth)
+    
+                    const correctedHeight = (worldSize.height - y)
+
+                    const isOreSpace = oresNoise[x][y] === 0
+
+                    const isInLayerRange = (
+                        correctedHeight >= layerRange[0] &&
+                        (
+                            layerRange[1] === "biomeMaxHeight" ?
+                            correctedHeight <= biomeSettings.maxHeight :
+                            correctedHeight <= layerRange[1]
+                        )
+                    )
+
+                    const isAReplaceableBlock = (() => {
+                        const currentBlockType = chunks[chunkIndex].props.data[blockIndex].props.type
+                        let result = true
+
+                        if (oreSettings.replaceableBlocks) {
+                            if (oreSettings.replaceableBlocks === "*") {
+                                result = true
+
+                            } else {
+                                if (!oreSettings.replaceableBlocks.includes(currentBlockType)) {
+                                    result = false
+                                }
+                            }
+                        }
+
+                        if (oreSettings.unreplaceableBlocks) {
+                            for (const replaceableBlockType of oreSettings.unreplaceableBlocks) {
+                                if (replaceableBlockType === currentBlockType) {
+                                    result = false
+                                }
+                            }
+                        }
+
+                        return result
+                    })()
+    
+                    if (isOreSpace && isInLayerRange && isAReplaceableBlock) {
+                        console.log(oreSettings.blockType)
+                        const blockProps = getBlockByType(oreSettings.blockType)
+                        chunks[chunkIndex].props.data[blockIndex] = new Block(blockProps)
+                    }
+                }
+            }
+        }
     }
 
     public generate(): Chunk[] {
         this.notifyAll("startedGeneration")
 
         const chunks = this.generateChunks()
+        this.generateOres(chunks)
         this.generateCaves(chunks)
 
         this.notifyAll("finishedGeneration")

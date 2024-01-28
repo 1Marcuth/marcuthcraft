@@ -3,7 +3,7 @@ import Block, { BlockPartialProps } from "./block"
 import { worldSize } from "./../game-config"
 import PRNG from "../utils/prng"
 
-function getBlockByType(blockType: string): BlockPartialProps {
+export function getBlockByType(blockType: string): BlockPartialProps {
     const blocksProps: BlockPartialProps[] = [
         {
             name: "Bloco de Terra",
@@ -190,8 +190,6 @@ function selectBlockType({
     } else if(chunk.props.borders.right && index % chunk.props.width === 0) {
         return BlockTypes.BEDROCK
     }
-
-    return BlockTypes.STONE
 
     if (y <= height) {
         if (y === height) {

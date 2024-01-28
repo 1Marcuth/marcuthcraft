@@ -11,7 +11,7 @@ export type GenerateHeightMapOptions = {
     lacunarity: number
 }
 
-export type CaveGeneratorProps = {
+export type NoiseGenerator2DProps = {
     seed: number
     width: number
     height: number
@@ -19,57 +19,65 @@ export type CaveGeneratorProps = {
     iterations: number
 }
 
-type CaveMap = number[][]
+type NoiseMap2D = number[][]
 
-class CaveGenerator {
-    public props: CaveGeneratorProps
+export type GenerateOreMapOptions = {
+    seed: number
+    width: number
+    height: number
+    density: number
+    iterations: number
+}
+
+class NoiseGenerator2D {
+    public props: NoiseGenerator2DProps
     private prng: PRNG
 
-    private constructor(props: CaveGeneratorProps) {
+    private constructor(props: NoiseGenerator2DProps) {
         this.props = props
         this.prng = new PRNG(this.props.seed)
     }
 
-    public static generate(props: CaveGeneratorProps): CaveMap {
-        const generator = new CaveGenerator(props)
+    public static generate(props: NoiseGenerator2DProps): NoiseMap2D {
+        const generator = new NoiseGenerator2D(props)
         const { iterations } = generator.props
 
-        const caveMap = generator.generateInitialMap()
+        const noiseMap2D = generator.generateInitialMap()
 
         for (let i = 0; i < iterations; i++) {
-            generator.iterateMap(caveMap)
+            generator.iterateMap(noiseMap2D)
         }
 
-        return caveMap
+        return noiseMap2D
     }
 
-    private generateInitialMap(): CaveMap {
+    private generateInitialMap(): NoiseMap2D {
         const { width, height, density } = this.props
-        const caveMap: CaveMap = [];
+        const noiseMap2D: NoiseMap2D = []
 
         for (let x = 0; x < width; x++) {
-            caveMap[x] = [];
+            noiseMap2D[x] = []
+
             for (let y = 0; y < height; y++) {
-                let xyz = this.prng.next()
-                caveMap[x][y] = xyz < density ? 1 : 0
+                noiseMap2D[x][y] = this.prng.next() < density ? 1 : 0
             }
         }
 
-        return caveMap
+        return noiseMap2D
     }
 
-    private iterateMap(caveMap: CaveMap): void {
+    private iterateMap(noiseMap2D: NoiseMap2D): void {
         const { width, height } = this.props
 
         for (let x = 0; x < width; x++) {
             for (let y = 0; y < height; y++) {
-                const wallCount = this.getNeighborsWalls(caveMap, x, y)
-                caveMap[x][y] = wallCount > 4 ? 1 : 0
+                const wallCount = this.getNeighborsWalls(noiseMap2D, x, y)
+                noiseMap2D[x][y] = wallCount > 4 ? 1 : 0
             }
         }
     }
 
-    private getNeighborsWalls(cavesMap: CaveMap, x: number, y: number) {
+    private getNeighborsWalls(cavesMap: NoiseMap2D, x: number, y: number) {
         const { width, height } = this.props
         let wallCount = 0
 
@@ -120,8 +128,12 @@ class Noise {
         return hightMap
     }
 
-    public static generateCavesMap(props: CaveGeneratorProps) {
-        return CaveGenerator.generate(props)
+    public static generateCavesMap(props: NoiseGenerator2DProps): NoiseMap2D {
+        return NoiseGenerator2D.generate(props)
+    }
+
+    public static generateOresMap(props: NoiseGenerator2DProps): NoiseMap2D {
+        return NoiseGenerator2D.generate(props)
     }
 }
 

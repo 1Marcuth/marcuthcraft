@@ -188,13 +188,15 @@ const HomePage: FC = () => {
                     gameRender.setProps({ currentScreen: "world" })
                 } else {
                     const stageNames: { [key: number]: string } = {
-                        1: "Gerando Chunks"
+                        1: "Gerando Chunks",
+                        2: "Gerando Cavernas"
                     }
 
                     const stageName = stageNames[worldGenerationProgress.stagesCompleted] || "Gerando Terreno..."
 
                     worldGenerationProgress.stagesCompleted++
                     worldGenerationProgress.currentStageName = stageName
+                    await wait(600)
                 }
             }
         })
