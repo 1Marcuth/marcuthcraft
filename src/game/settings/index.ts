@@ -16,6 +16,8 @@ const playerSize = {
 
 const defaultPlayerMoveSpeed = 120 * playerVisionScale
 
+const playerSkinSize = { width: 12, height: 20 }
+
 const chunksRenderDistance = 4
 const chunkWidth = 16
 const maxChunksToLeft = 5
@@ -57,6 +59,7 @@ export {
     playerVisionScale,
     playerSize,
     defaultPlayerMoveSpeed,
+    playerSkinSize,
     chunksRenderDistance,
     chunkWidth,
     maxChunksToLeft,

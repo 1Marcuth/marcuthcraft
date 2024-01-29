@@ -61,7 +61,7 @@ class World {
         const worldSeed = this.props.seed
         const generator = new WorldGenerator(worldSeed)
 
-        generator.subscribe((event, ...args) => this.notifyAll(WorldGenerator.name, event, ...args))
+        generator.subscribe((event, ...args) => this.notifyAll("WorldGenerator", event, ...args))
 
         const chunks = generator.generate()
         

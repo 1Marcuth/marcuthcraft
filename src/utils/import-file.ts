@@ -2,10 +2,9 @@ export type ImportFileOptions = {
     acceptedExtensions: string[]
 }
 
-function importFile({
-    acceptedExtensions
-}: ImportFileOptions): Promise<File> {
+function importFile({ acceptedExtensions }: ImportFileOptions): Promise<File> {
     const $fileInput = document.createElement("input")
+    
     $fileInput.type = "file"
     $fileInput.accept = acceptedExtensions.join(",")
     $fileInput.click()
@@ -14,7 +13,8 @@ function importFile({
         $fileInput.addEventListener("change", () => {
             if (!$fileInput.files) return reject("No files received!")
             const worldFile = $fileInput.files[0]
-            resolve(worldFile)
+            $fileInput.remove()
+            return resolve(worldFile)
         })
     })
 }

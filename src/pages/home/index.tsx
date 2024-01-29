@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from "react"
 
 import {
     autoplaySoundtrack,
+    playerSkinSize,
     screenSize,
     soundtrackVolume,
     splashMessageIntervalTime,
@@ -18,17 +19,18 @@ import GameRender, { GameRenderNewProps } from "../../game/utils/render"
 import Player, { getPlayerAction } from "../../game/common/player"
 import { wait } from "@testing-library/user-event/dist/utils"
 import GameScreen from "../../components/game-screen"
+import importImage from "../../utils/import-image"
+import importFile from "../../utils/import-file"
 import resources from "../../game/resources"
 import World from "../../game/common/world"
 import Game from "../../game"
 
 import styles from "./style.module.scss"
-import importFile from "../../utils/import-file"
 
 const HomePage: FC = () => {
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
 
-    function handleGameScreenReady(canvas: HTMLCanvasElement) {
+    function handleGameScreenReady(canvas: HTMLCanvasElement): void {
         setCanvas(canvas)
     }
 
@@ -43,15 +45,6 @@ const HomePage: FC = () => {
             stagesCompleted: 0
         }
 
-        async function handleWorldFileChange(event: Event): Promise<void> {
-            const fileInput = event.target as HTMLInputElement
-            if (!fileInput || !fileInput.files) return
-            const worldFile = fileInput.files[0]
-            game.props.world = new World({})
-            await game.props.world.import(worldFile)
-            gameRender.setProps({ currentScreen: "world" })
-        }
-
         async function handleKeyPressed(
             keyPressed: string,
             modifierKeys: ModifierKeys,
@@ -64,6 +57,11 @@ const HomePage: FC = () => {
                 } else {
                     alert("Nenhum mundo foi encontrado!")
                 }
+            }
+
+            if (modifierKeys.ctrl && keyPressed === "KeyK") {
+                const skinImage = await importImage({ maxSize: playerSkinSize, minSize: playerSkinSize })
+                game.props.player.setSkinImage(skinImage)
             }
 
             if (modifierKeys.ctrl && keyPressed === "KeyI") {
