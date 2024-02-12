@@ -10,10 +10,9 @@ import {
 } from "../settings/index"
 
 import SplashMessageManager from "./splash-message-manager"
-import CanvasButton from "../ui/button"
 import { Resource } from "./resource-loader"
+import CanvasButton from "../ui/button"
 import Game from "../index"
-
 
 type RequestAnimationFrameFunction = typeof requestAnimationFrame
 
@@ -184,6 +183,7 @@ class GameRender {
             const camera = game.props.player.props.camera
             const cameraX = camera.props.offset.x
             const cameraY = camera.props.offset.y
+
             const chunks = game.props.world!.props.chunks
             const chunksAmount = Object.keys(chunks).length
             const currentChunkIndex = Math.floor(cameraX / (chunkWidth * blockSize.width * playerVisionScale))
@@ -196,6 +196,7 @@ class GameRender {
         
                 for (let blockIndex = 0; blockIndex < chunk.props.data.length; blockIndex++) {
                     const block = chunk.props.data[blockIndex]
+
                     const x = ((blockIndex % chunkWidth) * blockSize.width + chunkIndex * chunkWidth * blockSize.width) * playerVisionScale
                     const y = (Math.floor(blockIndex / chunkWidth) * blockSize.height) * playerVisionScale
         
@@ -204,7 +205,7 @@ class GameRender {
                         const blockSpriteY = block.props.clipping.y
                         const blockClippingWidth = block.props.clipping.width
                         const blockClippingHeight = block.props.clipping.height
-                        const blockX = x - cameraX + $canvas.width / 2
+                        const blockX = x - cameraX
                         const blockY = y - cameraY
         
                         ctx.drawImage(
@@ -226,12 +227,12 @@ class GameRender {
         function drawPlayer() {
             ctx.fillStyle = "#000"
     
-            const playerX = ($canvas.width / 2) - (playerSize.width / 2)
-            const playerY = ($canvas.height / 2) - (playerSize.height / 2)
+            const x = game.props.player.props.position.x
+            const y = game.props.player.props.position.y
     
             ctx.fillRect(
-                playerX,
-                playerY,
+                x,
+                y,
                 playerSize.width * playerVisionScale,
                 playerSize.height * playerVisionScale
             )   
@@ -844,9 +845,9 @@ class GameRender {
         }
 
         function drawCoordinates() {
-            const camera = game.props.player.props.camera
-            const coordX = Math.floor(camera.props.offset.x / blockSize.width / playerVisionScale)
-            const coordY = (worldSize.height - Math.floor(camera.props.offset.y / blockSize.height / playerVisionScale)) - 20
+            const player = game.props.player
+            const coordX = Math.floor(player.props.position.x / blockSize.width / playerVisionScale)
+            const coordY = (worldSize.height - Math.floor(player.props.position.y / blockSize.height / playerVisionScale))
 
             const text = `X: ${coordX}, Y: ${coordY}`
 

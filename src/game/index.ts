@@ -30,7 +30,13 @@ class Game {
         this.props.world = world
     }
 
-    public update() {}
+    public update() {
+        const world = this.props.world
+
+        if (world) {
+            world.update()
+        }
+    }
 
     public subscribe(observer: Observer): void {
         this.observers.push(observer)

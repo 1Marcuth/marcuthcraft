@@ -1,7 +1,7 @@
 import WorldGenerator from "../core/world-generator"
 import randomUUID from "../../utils/id-generator"
 import exportFile from "../../utils/export-file"
-import { gameVersion } from "../settings/index"
+import { blockSize, chunkWidth, gameVersion } from "../settings/index"
 import { getBlockPropsByType } from "../helper"
 import Chunk, { ChunkData } from "./chunk"
 import Player from "./player"
@@ -58,6 +58,7 @@ class World {
 
     public generate(seed?: string | number): void {
         this.props.seed = seed ?? randomUUID()
+
         const worldSeed = this.props.seed
         const generator = new WorldGenerator(worldSeed)
 
@@ -74,10 +75,10 @@ class World {
     public async import(file: File): Promise<void> {
         const dataText = await file.text()
         const data: WorldData = JSON.parse(dataText)
-        this.load(data)
+        this.loadData(data)
     }
 
-    public load(data: WorldData): void {
+    public loadData(data: WorldData): void {
         this.props.chunks = {}
 
         for (const chunkIndex in data.chunks) {
@@ -139,7 +140,9 @@ class World {
         }
     }
 
-    public addEntity(entity: Entity, coordinates: Coordinates): void {}
+    public addEntity(entity: Entity, coordinates: Coordinates): void {
+        this.props.entities.push(entity)
+    }
 
     public addPlayer(player: Player, coordinates: Coordinates, isOwner?: boolean): void {
         if (isOwner) {
@@ -151,6 +154,25 @@ class World {
         }
 
         this.props.players.push(player)
+    }
+
+    private updateEntities() {
+        for (const entity of this.props.entities) {
+            entity.update()
+        }
+    }
+
+    private updatePlayers() {
+        for (const player of this.props.players) {
+            //player.update(blockPositions)
+        }
+    }
+
+    public update() {
+        //const blockPositions = this.props.chunks // calcular posições dos blocos do chunk no qual o player está
+
+        this.updateEntities()
+        //this.updatePlayers(blockPositions)
     }
 
     public subscribe(observer: Observer): void {

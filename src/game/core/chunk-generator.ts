@@ -2,8 +2,8 @@ import { getBiomeSettingsByType, getBlockPropsByType } from "../helper"
 import { BlockTypes } from "../settings/enum-types"
 import { worldSize } from "../settings/index"
 import { ChunkProps } from "../common/chunk"
-import PRNG from "../utils/prng"
 import Block from "../common/block"
+import PRNG from "../utils/prng"
 
 type Borders = {
     left?: boolean

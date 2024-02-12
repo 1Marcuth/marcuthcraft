@@ -26,6 +26,7 @@ import World from "../../game/common/world"
 import Game from "../../game"
 
 import styles from "./style.module.scss"
+import Camera from "../../game/common/camera"
 
 const HomePage: FC = () => {
     const [ canvas, setCanvas ] = useState<HTMLCanvasElement | null>(null)
@@ -124,7 +125,7 @@ const HomePage: FC = () => {
                     await wait(600)
                     gameRender.setProps({ currentScreen: "world" })
                 } else {
-                    const stageName = worldGenerationStageNames[worldGenerationProgress.stagesCompleted] || "Gerando Terreno..."
+                    const stageName = worldGenerationStageNames[worldGenerationProgress.stagesCompleted] || worldGenerationStageNames.default
                     worldGenerationProgress.stagesCompleted++
                     worldGenerationProgress.currentStageName = stageName
                 }
@@ -171,10 +172,14 @@ const HomePage: FC = () => {
             }
         }
 
-        const player = new Player({ skin: new Image() })
+        const player = new Player({
+            skin: new Image(),
+            camera: new Camera({ offset: { x: 0, y: 0 } })
+        })
+
         const game = new Game({ player: player })
-        const resourceLoader = new ResourceLoader({ resources: resources })
         const keyboardListener = new KeyboardListener(document)
+        const resourceLoader = new ResourceLoader({ resources: resources })
 
         const splashMessageManager = new SplashMessageManager({
             messages: splashMessages,

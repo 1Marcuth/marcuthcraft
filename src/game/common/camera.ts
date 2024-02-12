@@ -20,6 +20,7 @@ export type CameraProps = {
 
 class Camera {
     public props: CameraProps
+    public moveDirection?: MoveDirection
 
     public constructor(props: CameraProps) {
         this.props = {
@@ -28,33 +29,27 @@ class Camera {
         }
     }
 
-    public setMoveSpeed(newMoveSpeed: number) {
-        this.props.moveSpeed = newMoveSpeed
-    }
-
-    public setMoveDirection(newMoveDirection: MoveDirection) {
-        this.props.moveDirection = newMoveDirection
-    }
-
-    public move() {
-        if (!this.props.moveSpeed || !this.props.moveDirection) return
-
-		if (this.props.moveDirection.left) {
-			this.props.offset.x -= this.props.moveSpeed
-		}
+    public move(moveDirection: MoveDirection) {
+        this.moveDirection = moveDirection
         
-		if (this.props.moveDirection.right) {
-			this.props.offset.x += this.props.moveSpeed
-		}
+        if (!this.props.moveSpeed || !this.moveDirection) return
 
-		if (this.props.moveDirection.up) {
-			this.props.offset.y -= this.props.moveSpeed
-		}
+        if (this.moveDirection.left) {
+            this.props.offset.x -= this.props.moveSpeed
+        }
+        
+        if (this.moveDirection.right) {
+            this.props.offset.x += this.props.moveSpeed
+        }
 
-		if (this.props.moveDirection.down) {
-			this.props.offset.y += this.props.moveSpeed
-		}
-	}
+        if (this.moveDirection.up) {
+            this.props.offset.y -= this.props.moveSpeed
+        }
+
+        if (this.moveDirection.down) {
+            this.props.offset.y += this.props.moveSpeed
+        }
+    }
 }
 
 export default Camera

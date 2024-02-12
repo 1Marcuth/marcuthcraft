@@ -1,6 +1,8 @@
-import { defaultPlayerMoveSpeed } from "../settings/index"
+import { blockSize, gravity, playerJumpHeight, playerMaxFallSpeed, playerVisionScale, screenSize, worldSize } from "../settings/index"
+import { calculateJumpSpeed } from "../utils/gravity"
 import randomUUID from "../../utils/id-generator"
 import Camera from "./camera"
+import calculateScreenPosition from "../utils/calculate-screen-position"
 
 type Position = {
     x: number
@@ -14,14 +16,21 @@ enum MovementDirections {
 
 type MovementDirectionType = keyof typeof MovementDirections | string
 
+type Speed = {
+    x: number
+    y: number
+}
+
 export type PlayerProps = {
     camera: Camera
+    speed: Speed
     position: Position
     skin: HTMLImageElement
     isClimbing: boolean
     isFalling: boolean
     isHurt: boolean
     isJumping: boolean
+    isRising: boolean
     lastJumpTime: number
     currentMovementDirection: MovementDirectionType
 
@@ -48,6 +57,15 @@ type PlayerEventType = keyof typeof PlayerEvents
 type Observer = (eventType: PlayerEventType, ...args: any[]) => any
 
 type PlayerAction = () => any
+
+type BlockPosition = {
+    x: number
+    y: number
+}
+
+type UpdateOptions = {
+    blockPositions: BlockPosition[]
+}
 
 export function getPlayerAction(key: string, player: Player): PlayerAction | null {
     const acceptedKeys: { [key: string]: PlayerAction } = {
@@ -80,13 +98,14 @@ type PlayerMoveDirectionsType = keyof typeof PlayerMoveDirections
 
 type PlayerPartialProps = Omit<
     PlayerProps,
-    "camera" |
     "position" |
     "isClimbing" | 
     "isFalling" | 
     "isJumping" |
     "isHurt" |
+    "isRising" |
     "lastJumpTime" | 
+    "speed" |
     "currentMovementDirection"
 >
 
@@ -95,16 +114,22 @@ const defaultProps = {
     isFalling: false,
     isJumping: false,
     isHurt: false,
+    isRising: false,
     lastJumpTime: 0,
     position: {
         x: 0,
         y: 0
     },
-    currentMovementDirection: MovementDirections.LEFT
+    currentMovementDirection: MovementDirections.LEFT,
+    speed: {
+        x: 0,
+        y: 0
+    }
 }
 
 export type PlayerData = {
     id: string
+    speed: Speed
     position: Position
     isClimbing: boolean
     isFalling: boolean
@@ -123,59 +148,77 @@ export type PlayerData = {
 class Player {
     public id: string
     public props: PlayerProps
-    private observers: Observer[] = []
+
+    private observers: Observer[] = [
+        // (event, ...args) => {
+        //     if (event === "jump" || event === "fall") {
+        //         this.props.camera.props.moveSpeed = this.props.speed.y
+        //     } else if (event === "moveToLeft" || event === "moveToRight") {
+        //         this.props.camera.props.moveSpeed = this.props.speed.x
+        //     }
+        // },
+        (event) => console.log(this, event)
+    ]
+
+    private reachedJumpMaxHeight: boolean = false
 
     public constructor(props: PlayerPartialProps, id?: string) {
         this.id = id ?? randomUUID()
 
-        const camera = new Camera({
-            offset: { x: 0, y: 0 },
-            moveSpeed: defaultPlayerMoveSpeed
-        })
-
         this.props = {
             ...props,
             ...defaultProps,
-            position: camera.props.offset,
-            camera: camera
+            position: calculateScreenPosition({
+                x: 0,
+                y: 0,
+                blockSize: blockSize,
+                worldSize: worldSize,
+                screenSize: screenSize,
+                scale: playerVisionScale
+            })
         }
+
+        this.props.camera.props.offset = {x: -640, y: 3540}
     }
 
-    public move(direction: PlayerMoveDirectionsType) {
+    public move(direction: PlayerMoveDirectionsType): void {
         if (direction === "left") {
             this.notifyAll("moveToLeft")
-            this.props.camera.setMoveDirection({ left: true })
+            this.props.position.x -= this.props.camera.props.moveSpeed ?? 0
+            //this.props.camera.move({ left: true })
         } else if (direction === "right") {
             this.notifyAll("moveToRight")
-            this.props.camera.setMoveDirection({ right: true })
+            this.props.position.x += this.props.camera.props.moveSpeed ?? 0
+            //this.props.camera.move({ right: true })
         }
-
-        this.props.camera.move()
-        this.props.position = this.props.camera.props.offset
     }
 
-    public jump() {
-        this.notifyAll("jump")
-        this.props.camera.setMoveDirection({ up: true })
-        this.props.camera.move()
-        this.props.position = this.props.camera.props.offset
+    public jump(): void {
+        const canJump = true//!this.props.isJumping && !this.props.isFalling && !this.props.isHurt
+
+        if (canJump) {
+            this.notifyAll("jump")
+            this.props.position.y -= this.props.camera.props.moveSpeed ?? 0
+            this.props.speed.y = calculateJumpSpeed({ gravity: 0.1, height: playerJumpHeight })
+            //this.props.camera.move({ up: true })
+            this.props.isJumping = true
+        }
     }
 
-    public sneak() {
+    public sneak(): void {
         this.notifyAll("sneak")
-        // Se estiver voando
-        this.props.camera.setMoveDirection({ down: true })
-        this.props.camera.move()
-        this.props.position = this.props.camera.props.offset
+        this.props.position.y += this.props.camera.props.moveSpeed ?? 0
+        //this.props.camera.move({ down: true })
     }
 
-    public die() {
+    public die(): void {
         this.notifyAll("die")
     }
 
     public getData(): PlayerData {
         const data: PlayerData = {
             id: this.id,
+            speed: this.props.speed,
             position: this.props.position,
             isClimbing: this.props.isClimbing,
             isFalling: this.props.isFalling,
@@ -193,19 +236,75 @@ class Player {
 
         return data
     }
-
-    public subscribe(observer: Observer) {
-        this.observers.push(observer)
+    
+    public setSkinImage(skinImage: HTMLImageElement): void {
+        this.props.skin = skinImage
     }
 
-    private notifyAll(eventType: PlayerEventType, ...args: any[]) {
-        for (const observer of this.observers) {
-            observer(eventType, ...args)
+    private checkBlockCollision(blockPositions: BlockPosition[]): void {
+        const playerBottom = this.props.position.y - this.props.skin.height
+
+        for (const blockPosition of blockPositions) {
+            const blockTop = blockPosition.y
+            const blockBottom = blockPosition.y + blockSize.height
+            const blockLeft = blockPosition.x
+            const blockRight = blockPosition.x + blockSize.width
+
+            const isAboveTopOfBlock = playerBottom <= blockTop
+            const isRightOfLeftSideOfBlock = this.props.position.x >= blockLeft
+            const isLeftOfRightSideOfBlock = this.props.position.x <= blockRight
+
+            if (isAboveTopOfBlock && isRightOfLeftSideOfBlock && isLeftOfRightSideOfBlock) {
+                this.props.position.y = blockTop + this.props.skin.height
+                this.props.isJumping = false
+                this.props.speed.y = 0
+                return
+            }
+        }
+
+        this.props.isJumping = true
+    }
+
+    public update({ blockPositions }: UpdateOptions): void {
+        this.props.position.x += this.props.speed.x
+
+        this.checkBlockCollision(blockPositions)
+
+        if (!this.props.isJumping) {
+            this.applyGravity()
+        }
+
+        this.props.position.y += this.props.speed.y
+
+        if (this.props.isJumping) {
+            this.props.speed.y = 0
+            this.props.isJumping = false
+        }
+
+        if (this.props.position.y >= 0) {
+            this.props.position.y = 0
+            this.props.isRising = false
+        } else {
+            this.props.isRising = true
         }
     }
 
-    public setSkinImage(skinImage: HTMLImageElement) {
-        this.props.skin = skinImage
+    private applyGravity(): void {
+        this.props.speed.y -= gravity
+
+        if (this.props.speed.y < -playerMaxFallSpeed) {
+            this.props.speed.y = -playerMaxFallSpeed
+        }
+    }
+
+    public subscribe(observer: Observer): void {
+        this.observers.push(observer)
+    }
+
+    private notifyAll(eventType: PlayerEventType, ...args: any[]): void {
+        for (const observer of this.observers) {
+            observer(eventType, ...args)
+        }
     }
 }
 
